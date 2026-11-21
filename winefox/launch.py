@@ -689,7 +689,7 @@ def run_app(store: Store, app: App, extra: list[str] = (), watch: bool = True, o
             ide.remove_old_shim(build, env, prefix_path)
         except (OSError, registry.RegistryError) as e:
             log.warning("old Code.exe: %s", e)
-        # the WineFoxVSCode plugin (unreal/) starts this VS Code on the Linux side
+        # the WineFoxVSCode plugin (Wine-Fx repository, unreal/) starts this VS Code on the Linux side
         code = ide.code_command()
         if code and "WINEFOX_CODE" not in env:
             env["WINEFOX_CODE"] = code

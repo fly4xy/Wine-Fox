@@ -1,4 +1,4 @@
 """Wine Fox: a Wine launcher for desktop software."""
 
-__version__ = "0.11"
+__version__ = "1.0"
 APP_NAME = "Wine Fox"

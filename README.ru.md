@@ -13,7 +13,6 @@ Python 3.12 + PySide6 (QML), распространяется как AppImage. [
 | `winefox/` | сам лаунчер |
 | `packaging/` | сборка AppImage, Windows-помощники |
 | `scripts/` | загрузка AutoSDK и шрифты: их запускает Wine Fox или вы сами |
-| `unreal/` | плагин для Unreal Editor |
 | [`legacy/`](legacy/README.md) | патчи, чьи Windows-модули Wine Fox несёт набором для префиксов, и скрипт сборки этого набора |
 | `tools/` | упаковщик AutoSDK для Windows (`make-autosdk.ps1`), инспектор окон для отладки (`wininspect.c`) |
 
@@ -58,7 +57,7 @@ Wine Fox работает в одном экземпляре: повторный
   `c_cpp_properties.json`: Unix-пути, флаги и стандарт языка самой сборки, библиотека MSVC и
   Windows SDK из AutoSDK, их заголовки находятся в любом регистре. Подсказки и подсветка в
   VS Code с clangd (а также VSCodium, CLion, Zed, Kate); Live Coding — в Unreal. Плагин редактора
-  из [`unreal/WineFoxVSCode`](#плагин-unreal-editor) открывает в этом VS Code C++-класс блупринта или проект.
+  из [`WineFoxVSCode`](https://github.com/fly4xy/Wine-fx/tree/main/unreal/WineFoxVSCode) (в репозитории Wine-Fx) открывает в этом VS Code C++-класс блупринта или проект.
 - **«Открыть расположение файла» в файловом менеджере Linux.** *Show in folder*, *Open file
   location* и папки, которые открывают Windows-программы, показываются в Dolphin, Nautilus и т. п.
   (с выделенным файлом), а не в проводнике Wine; рабочий стол Wine и остальное остаются за Wine
@@ -88,13 +87,8 @@ Wine Fox работает в одном экземпляре: повторный
 
 ## Плагин Unreal Editor
 
-`unreal/WineFoxVSCode` добавляет в Unreal Editor под Wine пункт *Tools → Open in VS Code (Linux)*.
-В редакторе блупринта он открывает C++-родителя блупринта (его `.h` и `.cpp`), в остальных
-местах, например во вьюпорте, — линуксовый workspace проекта (`<Project>.linux.code-workspace`).
-
-Скопируйте папку в `Plugins/` проекта (или в `Engine/Plugins/` движка) и один раз соберите
-редактор. VS Code запускается на стороне Linux: тот, что Wine Fox находит (`code`, `codium` или
-Flatpak) при запуске редактора, иначе `code` из `PATH`; `WINEFOX_CODE` его заменяет.
+[`WineFoxVSCode`](https://github.com/fly4xy/Wine-fx/tree/main/unreal/WineFoxVSCode) из репозитория Wine-Fx добавляет в Unreal Editor под Wine пункт
+*Tools → Open in VS Code (Linux)*; какой VS Code запускать, ему сообщает Wine Fox (`WINEFOX_CODE`).
 
 ## Скрипты
 
