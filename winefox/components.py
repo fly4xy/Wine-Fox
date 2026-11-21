@@ -57,6 +57,8 @@ class Source:
 
 
 SOURCES = [
+    Source("wine-fx", "wine", "Wine-Fx", "lis-carter.site/wine-fx", "",
+           "Wine with Wine Fox's fixes for Unreal Engine, KDE, X11 and Wayland; updates keep the replaced files"),
     Source("kron4ek", "wine", "Wine", "Kron4ek/Wine-Builds", r"^wine-[\w.]+-amd64\.tar\.xz$",
            "Vanilla Wine by Kron4ek"),
     Source("kron4ek-wow64", "wine", "Wine (WoW64)", "Kron4ek/Wine-Builds", r"^wine-[\w.]+-amd64-wow64\.tar\.xz$",
@@ -116,6 +118,8 @@ def _get(url: str, timeout: float = 30):
 def releases(source_id: str, refresh: bool = False) -> list[dict]:
     """[{tag, name, date, asset, url, size, prerelease}] newest first; cached for an hour."""
     source = SOURCES_BY_ID[source_id]
+    if source_id == "wine-fx":
+        return _fx_releases()
     cache = CACHE_DIR / f"releases-{source.repo.replace('/', '_')}.json"
     data = None
     if not refresh and cache.exists() and time.time() - cache.stat().st_mtime < CACHE_SECONDS:
@@ -144,6 +148,17 @@ def releases(source_id: str, refresh: bool = False) -> list[dict]:
                                "version": version_of(source, r["tag_name"], a["name"])})
                 break
     return result
+
+
+def _fx_releases() -> list[dict]:
+    from . import winefx
+    try:
+        items = winefx.releases()
+    except winefx.FxError as e:
+        raise DownloadError(str(e)) from e
+    return [{"tag": r["release"], "name": r["release"], "date": r.get("date", ""), "url": r["overlay"]["url"],
+             "size": r["overlay"]["size"], "prerelease": False, "version": f"Wine-Fx-{r['wine']}", "label": r["release"], "fx": r}
+            for r in items]
 
 
 def version_of(source: Source, tag: str, asset: str) -> str:
@@ -302,6 +317,15 @@ def _extract(archive: Path, dest: Path, name: str) -> None:
 def download(source_id: str, release: dict, progress=None) -> Path:
     """Download and unpack a release; progress(done_bytes, total_bytes) is called while downloading."""
     source = SOURCES_BY_ID[source_id]
+    if source_id == "wine-fx":     # base once, then the release's files over it (dest: a build to update)
+        from . import winefx
+        dest = Path(release.get("dest") or WINE_DIR / release["version"])
+        log.info("installing %s into %s", release["name"], dest)
+        try:
+            winefx.install(release["fx"], dest, progress)
+        except (winefx.FxError, OSError) as e:
+            raise DownloadError(f"{release['name']}: {e}") from e
+        return dest
     if source.kind == "wine":
         dest = WINE_DIR / release["version"]
     else:

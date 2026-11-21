@@ -15,7 +15,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, QFileSystemWatcher, QObject, QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QGuiApplication, QImage, QPalette
 
-from .. import __version__, autosdk, components, i18n, config, desktop, discover, icons, ide, launch, log as wflog, lutris, patches, paths, recipes, servers, registry, themes, unreal, updates, usage, users, wine, wineconf
+from .. import __version__, autosdk, components, i18n, config, desktop, discover, icons, ide, launch, winefx, log as wflog, lutris, patches, paths, recipes, servers, registry, themes, unreal, updates, usage, users, wine, wineconf
 from ..config import App, Prefix, Store
 from ..i18n import tr
 
@@ -223,6 +223,8 @@ class Backend(QObject):
         super().__init__()
         self.store = store
         self._builds: list[wine.WineBuild] = []
+        self._fx: dict[str, dict] = {}            # build path -> its Wine-Fx release ({} if not Wine-Fx)
+        self._fx_releases: list[dict] | None = None   # Wine-Fx's releases, read once when there is one
         self._groups: list[servers.PrefixGroup] = []
         self._busy: list[str] = []
         self._downloads: dict[str, int] = {}
@@ -353,8 +355,24 @@ class Backend(QObject):
 
     @Property("QVariantList", notify=buildsChanged)
     def builds(self):
-        return [{"path": str(b.path), "name": b.name, "version": b.version, "system": b.system}
+        return [{"path": str(b.path), "name": b.name, "version": b.version, "system": b.system,
+                 "fx": self._fx.get(str(b.path), {}).get("release", ""),   # the Wine-Fx release in it
+                 "fxUpdate": (self._fx_update(str(b.path)) or {}).get("name", "")}
                 for b in self._builds]
+
+    def _fx_update(self, path: str) -> dict | None:
+        """The newest Wine-Fx release that updates the build at path (same Wine, later letter)."""
+        have = self._fx.get(path)
+        return next((r for r in self._fx_releases or [] if have and r["fx"]["wine"] == have.get("wine")
+                     and r["fx"]["fx"] > have.get("fx", "")), None)
+
+    @Slot(str)
+    def updateBuild(self, path):
+        """Put the newest Wine-Fx release into a Wine-Fx build: the previous release's files come
+        back first, the replaced ones stay as *.wfx-orig."""
+        release = self._fx_update(path)
+        if release:
+            self.download("wine-fx", dict(release, dest=path))
 
     @Property("QVariantList", notify=processesChanged)
     def processes(self):
@@ -962,6 +980,21 @@ class Backend(QObject):
                     .replace("%1", engine.prefix.name).replace("%2", tr(part.title))
         return ""
 
+    @Slot(str, str, result=str)
+    def appPatchHint(self, prefix_id, exe):
+        """What the prefix lacks for this program: the new Epic Games Launcher closes at once
+        without the ole32 fix (Tools, Patches)."""
+        prefix = self.store.prefixes.get(prefix_id)
+        if not prefix or exe.replace("\\", "/").rsplit("/", 1)[-1].lower() != "epicgameslauncher.exe":
+            return ""
+        for pack in patches.load_packs():
+            part = next((p for p in pack.parts if p.id == "ole32"), None)
+            if part and patches.prefix_part_status(paths.expand(prefix.path), prefix.arch != "win32", pack, part) != "installed":
+                return tr("The new Epic Games Launcher closes right after it starts unless the prefix %1 has the fix “%2” "
+                          "(Tools, Patches). It also needs a Wine-Fx build (Wine & components).") \
+                    .replace("%1", prefix.name).replace("%2", tr(part.title))
+        return ""
+
     def _code_files(self, project: Path) -> dict:
         """The files for the Linux code editor: whether they are there (Settings, Code editor)."""
         if not self.store.settings.code_editor:
@@ -1463,7 +1496,13 @@ class Backend(QObject):
 
         def done(items):
             for r in items:
-                if source.kind == "wine":
+                if source_id == "wine-fx":
+                    have = winefx.installed(components.WINE_DIR / r["version"])
+                    r["installed"] = have.get("release") == r["name"]
+                    r["update"] = winefx.newer(r["fx"], components.WINE_DIR / r["version"])
+                    if have.get("wine") != r["fx"]["wine"]:     # the first time Wine itself comes too
+                        r["size"] += r["fx"]["base"]["size"]
+                elif source.kind == "wine":
                     r["installed"] = (components.WINE_DIR / r["version"]).is_dir()
                 else:
                     r["installed"] = components.find(source.kind, r["version"]) is not None
@@ -1529,10 +1568,21 @@ class Backend(QObject):
 
     @Slot()
     def refreshBuilds(self):
+        def scan():
+            builds = wine.scan(self.store.settings.wine_dirs)
+            self._fx = {str(b.path): winefx.installed(b.path) for b in builds}
+            if self._fx_releases is None and any(self._fx.values()) and self.store.settings.check_updates:
+                try:
+                    self._fx_releases = components.releases("wine-fx")
+                except components.DownloadError as e:
+                    log.warning("%s", e)
+                    self._fx_releases = []
+            return builds
+
         def done(builds):
             self._builds = builds
             self.buildsChanged.emit()
-        self._background(tr("Scanning Wine builds"), lambda: wine.scan(self.store.settings.wine_dirs), done)
+        self._background(tr("Scanning Wine builds"), scan, done)
 
     @Slot()
     def refreshProcesses(self):

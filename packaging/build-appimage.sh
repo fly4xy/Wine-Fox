@@ -8,7 +8,7 @@
 # Environment:
 #   WORK       build directory (default: ~/.cache/winefox-appimage)
 #   PY_SERIES  Python version (default: 3.12)
-#   PREFIX_PACK the patch pack for prefixes (default: the newest wine-fx/work/<version>/prefix-pack)
+#   PREFIX_PACK the patch pack for prefixes (default: the newest legacy/work/<version>/prefix-pack)
 #   UPDATE_BASE where the AppImage and latest.json are downloaded from (default: the site's)
 set -euo pipefail
 
@@ -74,9 +74,9 @@ cp -r "$BUNDLE/data/winefox/components" "$APPDIR/opt/components"
 ls "$APPDIR"/opt/components/*
 
 # the patch pack for prefixes (Tools, Patches): the fixed Windows modules of Wine that
-# wine-fx/build.sh made (wine-fx/work/<version>/prefix-pack), or PREFIX_PACK=<that folder>
+# legacy/build-pack.sh made (legacy/work/<version>/prefix-pack), or PREFIX_PACK=<that folder>
 mkdir -p "$APPDIR/opt/patches"
-packs=${PREFIX_PACK:-$(ls -d "$HERE"/wine-fx/work/*/prefix-pack 2>/dev/null | sort -V | tail -1)}
+packs=${PREFIX_PACK:-$(ls -d "$HERE"/legacy/work/*/prefix-pack 2>/dev/null | sort -V | tail -1)}
 if [ -n "$packs" ] && [ -f "$packs/pack.toml" ]; then
     id=$(sed -n 's/^id = "\(.*\)"/\1/p' "$packs/pack.toml" | head -1)
     echo ">>> bundling the patch pack $id ($packs)"
@@ -84,7 +84,7 @@ if [ -n "$packs" ] && [ -f "$packs/pack.toml" ]; then
     sed -i 's/\r$//' "$APPDIR/opt/patches/$id/files/bin/"*
     chmod 755 "$APPDIR/opt/patches/$id/files/bin/"*
 else
-    echo ">>> no patch pack for prefixes (run wine-fx/build.sh first, or set PREFIX_PACK)"
+    echo ">>> no patch pack for prefixes (run legacy/build-pack.sh first, or set PREFIX_PACK)"
 fi
 
 # scripts Wine Fox runs (fetch-autosdk.sh: the AutoSDK download in Wine & components)

@@ -52,7 +52,7 @@ Panel {
         wrapMode: Text.WordWrap
         color: Theme.dim
         font.pixelSize: Theme.smallFont
-        text: panel.source ? panel.source.note + "  ·  github.com/" + panel.source.repo : ""
+        text: panel.source ? panel.source.note + "  ·  " + (panel.source.repo.indexOf(".") < 0 ? "github.com/" : "") + panel.source.repo : ""
     }
     Text {
         visible: panel.loading || (!panel.loading && panel.releases.length === 0)
@@ -83,7 +83,7 @@ Panel {
                     spacing: 1
                     RowLayout {
                         spacing: 8
-                        Text { text: rel.modelData.version; color: Theme.text; font.pixelSize: Theme.fontSize }
+                        Text { text: rel.modelData.label || rel.modelData.version; color: Theme.text; font.pixelSize: Theme.fontSize }
                         Text { visible: rel.modelData.prerelease; text: qsTr("pre-release"); color: Theme.danger; font.pixelSize: Theme.smallFont }
                         Text { visible: rel.modelData.installed; text: qsTr("installed"); color: Theme.ok; font.pixelSize: Theme.smallFont }
                     }
@@ -110,8 +110,8 @@ Panel {
                 }
                 FoxButton {
                     visible: rel.progress === undefined
-                    text: rel.modelData.installed ? qsTr("Reinstall") : qsTr("Download")
-                    kind: rel.modelData.installed ? "flat" : "normal"
+                    text: rel.modelData.installed ? qsTr("Reinstall") : rel.modelData.update ? qsTr("Update") : qsTr("Download")
+                    kind: rel.modelData.installed ? "flat" : rel.modelData.update ? "primary" : "normal"
                     onClicked: backend.download(panel.sourceId, rel.modelData)
                 }
             }

@@ -14,11 +14,11 @@ Python 3.12 + PySide6 (QML), shipped as an AppImage. [Русская верси�
 | `packaging/` | the AppImage build, the Windows helpers |
 | `scripts/` | the AutoSDK download and fonts, run by Wine Fox or by hand |
 | `unreal/` | the Unreal Editor plugin |
-| [`wine-fx/`](wine-fx/README.md) | Wine-Fx: Wine builds with our patches, built on your computer with one script |
+| [`legacy/`](legacy/README.md) | the patches whose Windows modules Wine Fox carries as its patch pack for prefixes, and the script that builds it |
 | `tools/` | the AutoSDK packer for Windows (`make-autosdk.ps1`), a window inspector for debugging (`wininspect.c`) |
 
-Releases carry the AppImage and, for each Wine version, `wine-fx-<version>-src.tar.gz`
-(the Wine-Fx build script and patches, made with `wine-fx/make-archive.sh`).
+Releases carry the AppImage. Wine-Fx, Wine with our patches, is a repository of its own
+(`../wine-fx`): its patches, build script and file releases, which Wine Fox installs and updates.
 
 ## Running
 
@@ -75,7 +75,7 @@ Only one Wine Fox runs at a time: starting it again shows the window that is alr
 - **Processes** by prefix, including ones Wine Fox did not start: CPU, memory, threads and disk
   for every process, sorted by any column, and a *Performance* tab with the prefix's last two
   minutes.
-- **Wine-Fx builds** ([`wine-fx/`](wine-fx/README.md)) carry Wine Fox's fixes; the launcher does not patch builds itself.
+- **Wine-Fx builds** (the Wine-Fx repository) carry Wine Fox's fixes to Wine itself; Wine Fox downloads and updates them (Wine & components).
 - **Patches for prefixes**: fixes to Wine's Windows modules (system file dialogs, dragging files in, .bat scripts, the Epic Games Launcher crash) come with Wine Fox (in the AppImage) and go into one prefix (Tools, Patches), leaving the build as it is.
 - **Recipes** for prefixes (TOML): Unreal Engine AutoSDK layout, Windows fonts, Visual Studio
   telemetry off; winetricks verbs.
@@ -186,7 +186,7 @@ administrator command line, explorer.exe for the Linux file manager) need mingw-
 ## License
 
 Wine Fox: GPL-3.0, see [LICENSE](LICENSE). The patches to Wine and the files of Wine they change
-(`wine-fx/versions/*/patches`): LGPL-2.1-or-later, like Wine. Epic Games' patches
-(`wine-fx/versions/*/epic`): MIT, see the `LICENSE` next to them. Microsoft's toolchain, SDKs and
+(`legacy/*/patches`, and Wine-Fx's in its repository): LGPL-2.1-or-later, like Wine. Epic Games' patches
+(in the Wine-Fx repository, `versions/*/epic`): MIT, see the `LICENSE` next to them. Microsoft's toolchain, SDKs and
 fonts are not in this repository: the scripts download them on your computer after you accept
 Microsoft's licenses.

@@ -21,8 +21,8 @@ Its Windows modules go to system32/syswow64 as native DLLs (without Wine's built
 DllOverrides make Wine take them, and its other files go to <prefix>/.winefox/patches/<pack>/.
 Wine's own files there are kept as <file>.winefox-orig and come back on restore.
 
-The packs come with Wine Fox (the AppImage's opt/patches): wine-fx/build.sh builds their modules
-(wine-fx/work/<version>/prefix-pack), packaging/build-appimage.sh puts them in.
+The packs come with Wine Fox (the AppImage's opt/patches): legacy/build-pack.sh builds their
+modules (legacy/work/<version>/prefix-pack), packaging/build-appimage.sh puts them in.
 """
 from __future__ import annotations
 
@@ -68,11 +68,11 @@ class Pack:
 
 def _manifests() -> list[Path]:
     """The packs Wine Fox carries: in the AppImage (opt/patches/<pack>/), or, run from the
-    sources, the ones wine-fx/build.sh made (wine-fx/work/<version>/prefix-pack/)."""
+    sources, the ones legacy/build-pack.sh made (legacy/work/<version>/prefix-pack/)."""
     bundled = components.bundled_dir()
     if bundled:
         return sorted((bundled.parent / "patches").glob("*/pack.toml"))
-    return sorted((Path(__file__).resolve().parent.parent / "wine-fx" / "work").glob("*/prefix-pack/pack.toml"))
+    return sorted((Path(__file__).resolve().parent.parent / "legacy" / "work").glob("*/prefix-pack/pack.toml"))
 
 
 def load_packs() -> list[Pack]:

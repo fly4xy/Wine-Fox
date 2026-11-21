@@ -129,5 +129,7 @@
  "Updates": "Обновления",
  "Wine Fox %1. New versions come from lis-carter.site.": "Wine Fox %1. Новые версии берутся с lis-carter.site.",
  "Check for updates at start": "Проверять обновления при запуске",
- "Check for updates": "Проверить обновления"
+ "Check for updates": "Проверить обновления",
+ "Updating… %1%": "Обновление… %1%",
+ "Update to %1": "Обновить до %1"
 }

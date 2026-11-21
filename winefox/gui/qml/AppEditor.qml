@@ -70,6 +70,16 @@ Panel {
         }
     }
 
+    // what the prefix lacks for this program (the new Epic Games Launcher)
+    Text {
+        readonly property string hint: backend.appPatchHint(prefix.value() || "", exe.text)
+        visible: hint !== ""
+        text: hint
+        Layout.fillWidth: true
+        wrapMode: Text.WordWrap
+        color: Theme.accent
+        font.pixelSize: Theme.smallFont
+    }
     FormRow {
         label: qsTr("Name")
         FoxField { id: name; Layout.fillWidth: true; placeholderText: qsTr("Taken from the executable if empty") }

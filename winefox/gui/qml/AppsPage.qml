@@ -229,20 +229,15 @@ Item {
                                 ToolTip.text: qsTr("Close its windows, as their close button does (one without windows is ended)")
                                 onClicked: running ? backend.stopApp(row.modelData.id) : backend.runApp(row.modelData.id)
                             }
-                            // the rest of the row's actions: one small button
+                            // the application's settings (Delete is there too)
                             FoxButton {
                                 text: "⋯"
                                 kind: "flat"
                                 implicitWidth: implicitHeight
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 500
-                                ToolTip.text: qsTr("More")
-                                onClicked: more.popup()
-                                FoxMenu {
-                                    id: more
-                                    FoxMenuItem { text: qsTr("Edit"); onTriggered: page.editApp(row.modelData) }
-                                    FoxMenuItem { text: qsTr("Delete"); onTriggered: { deleteConfirm.app = row.modelData; deleteConfirm.open() } }
-                                }
+                                ToolTip.text: qsTr("Application settings")
+                                onClicked: page.editApp(row.modelData)
                             }
                         }
                     }
@@ -277,13 +272,5 @@ Item {
             kind: "flat"
             onClicked: { backend.runApp(againConfirm.app.id); againConfirm.close() }
         }
-    }
-
-    FoxDialog {
-        id: deleteConfirm
-        property var app: null
-        title: qsTr("Delete %1?").arg(app ? app.name : "")
-        text: qsTr("Only the entry in Wine Fox (and its menu entry) is removed, the program stays installed.")
-        onAccepted: if (app) backend.deleteApp(app.id)
     }
 }

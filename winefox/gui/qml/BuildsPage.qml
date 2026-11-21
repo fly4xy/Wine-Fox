@@ -37,13 +37,21 @@ Item {
                         id: buildRow
                         required property var modelData
                         title: modelData.name
-                        tag: modelData.version
+                        tag: modelData.fx || modelData.version
                         note: modelData.path === backend.settings.default_build ? qsTr("default") : ""
                         detail: modelData.path
                         FoxButton {
                             text: qsTr("Make default"); kind: "flat"
                             visible: buildRow.modelData.path !== backend.settings.default_build
                             onClicked: backend.saveSettings({ default_build: buildRow.modelData.path })
+                        }
+                        // a newer Wine-Fx release of this Wine: its files go in, the replaced ones are kept
+                        FoxButton {
+                            readonly property var percent: backend.downloads[buildRow.modelData.fxUpdate]
+                            visible: buildRow.modelData.fxUpdate !== ""
+                            text: percent !== undefined ? qsTr("Updating… %1%").arg(percent) : qsTr("Update to %1").arg(buildRow.modelData.fxUpdate.replace("Wine-Fx-", ""))
+                            kind: "primary"; enabled: percent === undefined
+                            onClicked: backend.updateBuild(buildRow.modelData.path)
                         }
                         FoxButton { text: qsTr("Open"); kind: "flat"; onClicked: backend.openPath(buildRow.modelData.path) }
                         FoxButton {

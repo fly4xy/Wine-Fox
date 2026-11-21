@@ -222,5 +222,10 @@
  "The downloaded file is damaged (size or checksum): the update was not installed": "Скачанный файл повреждён (размер или контрольная сумма): обновление не установлено",
  "Could not install the update: %1": "Не удалось установить обновление: %1",
  "Wine Fox %1 is the newest version": "Wine Fox %1 — последняя версия",
- "Checking for updates": "Проверка обновлений"
+ "Checking for updates": "Проверка обновлений",
+ "Wine with Wine Fox's fixes for Unreal Engine, KDE, X11 and Wayland; updates keep the replaced files": "Wine с исправлениями Wine Fox для Unreal Engine, KDE, X11 и Wayland; при обновлении заменённые файлы сохраняются",
+ "cannot get the Wine-Fx releases: %1": "не удалось получить релизы Wine-Fx: %1",
+ "%1 is damaged (size or checksum)": "%1 повреждён (размер или контрольная сумма)",
+ "%1 is not empty and has no Wine %2": "%1 не пуста, и в ней нет Wine %2",
+ "The new Epic Games Launcher closes right after it starts unless the prefix %1 has the fix “%2” (Tools, Patches). It also needs a Wine-Fx build (Wine & components).": "Новый Epic Games Launcher закрывается сразу после запуска, если в префиксе %1 нет исправления «%2» («Инструменты», «Патчи»). Ещё ему нужна сборка Wine-Fx («Wine и компоненты»)."
 }

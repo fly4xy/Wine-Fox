@@ -14,11 +14,11 @@ Python 3.12 + PySide6 (QML), распространяется как AppImage. [
 | `packaging/` | сборка AppImage, Windows-помощники |
 | `scripts/` | загрузка AutoSDK и шрифты: их запускает Wine Fox или вы сами |
 | `unreal/` | плагин для Unreal Editor |
-| [`wine-fx/`](wine-fx/README.ru.md) | Wine-Fx: сборки Wine с нашими патчами, собираются у вас одним скриптом |
+| [`legacy/`](legacy/README.md) | патчи, чьи Windows-модули Wine Fox несёт набором для префиксов, и скрипт сборки этого набора |
 | `tools/` | упаковщик AutoSDK для Windows (`make-autosdk.ps1`), инспектор окон для отладки (`wininspect.c`) |
 
-В релизах лежат AppImage и для каждой версии Wine `wine-fx-<версия>-src.tar.gz`
-(скрипт сборки Wine-Fx и патчи, их делает `wine-fx/make-archive.sh`).
+В релизах лежит AppImage. Wine-Fx, Wine с нашими патчами, теперь отдельный репозиторий
+(`../wine-fx`): его патчи, скрипт сборки и файловые релизы, которые Wine Fox ставит и обновляет.
 
 ## Запуск
 
@@ -72,7 +72,7 @@ Wine Fox работает в одном экземпляре: повторный
 - **Процессы** по префиксам, в том числе запущенные не из Wine Fox: CPU, память, потоки и диск у
   каждого процесса, сортировка по любой колонке и вкладка *Performance* с последними двумя
   минутами префикса.
-- **Сборки Wine-Fx** ([`wine-fx/`](wine-fx/README.ru.md)) несут исправления Wine Fox; сам лаунчер сборки не патчит.
+- **Сборки Wine-Fx** (репозиторий Wine-Fx) несут исправления Wine Fox в самом Wine; Wine Fox скачивает и обновляет их («Wine и компоненты»).
 - **Патчи для префиксов**: исправления Windows-модулей Wine (системные диалоги файлов, перетаскивание файлов, .bat-скрипты, вылет Epic Games Launcher) идут в самом Wine Fox (внутри AppImage) и ставятся в один префикс (Инструменты, Патчи), не трогая сборку.
 - **Рецепты** для префиксов (TOML): раскладка AutoSDK для Unreal Engine, шрифты Windows,
   отключение телеметрии Visual Studio; команды winetricks.
@@ -184,7 +184,7 @@ Windows-помощникам (`packaging/helpers`: командная
 ## Лицензия
 
 Wine Fox: GPL-3.0, см. [LICENSE](LICENSE). Патчи к Wine и изменённые ими файлы Wine
-(`wine-fx/versions/*/patches`): LGPL-2.1-or-later, как сам Wine. Патчи Epic Games
-(`wine-fx/versions/*/epic`): MIT, см. `LICENSE` рядом с ними. Тулчейна, SDK и шрифтов Microsoft
+(`legacy/*/patches` и патчи Wine-Fx в его репозитории): LGPL-2.1-or-later, как сам Wine. Патчи Epic Games
+(в репозитории Wine-Fx, `versions/*/epic`): MIT, см. `LICENSE` рядом с ними. Тулчейна, SDK и шрифтов Microsoft
 в репозитории нет: скрипты скачивают их у вас на компьютере после того, как вы примете лицензии
 Microsoft.

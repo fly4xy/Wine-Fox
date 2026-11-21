@@ -52,7 +52,7 @@ ApplicationWindow {
     }
 
     // development: WINEFOX_SCREENSHOTS walks through these steps
-    readonly property int screenshotSteps: 24
+    readonly property int screenshotSteps: 25
     function screenshotStep(i) {
         var first = backend.prefixes.length ? backend.prefixes[backend.prefixes.length - 1] : null
         if (i === 16 && first) { installPanel.close(); showPrefix(first.id); wineConfigPanel.openFor(first) }
@@ -63,6 +63,7 @@ ApplicationWindow {
         if (i === 21) { showPage(2); autosdkPanel.openPanel() }
         if (i === 22 && first) { autosdkPanel.close(); showPrefix(first.id); patchPanel.openForPrefix(first) }
         if (i === 23) { patchPanel.close(); showPage(4); showUpdate("0.11", true) }
+        if (i === 24) { updateDialog.close(); showPage(2); downloadPanel.openFor("wine") }
         if (i === 0) showPage(0)
         if (i === 1 && first) showPrefix(first.id)
         if (i >= 2 && i <= 4) showPage(i)

@@ -239,5 +239,6 @@
  "You have %1. Wine Fox does not run from an AppImage here: download the new version from the site.": "У вас %1. Здесь Wine Fox запущен не из AppImage: скачайте новую версию с сайта.",
  "Open the site": "Открыть сайт",
  "Wine Fox %1 is installed": "Wine Fox %1 установлен",
- "Restart Wine Fox to use it. Programs started from Wine Fox keep running.": "Перезапустите Wine Fox, чтобы перейти на неё. Запущенные из Wine Fox программы продолжат работать."
+ "Restart Wine Fox to use it. Programs started from Wine Fox keep running.": "Перезапустите Wine Fox, чтобы перейти на неё. Запущенные из Wine Fox программы продолжат работать.",
+ "Application settings": "Настройки приложения"
 }
