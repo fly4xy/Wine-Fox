@@ -6,8 +6,9 @@ build/
 .venv/
 venv/
 
-# what legacy/build-pack.sh builds (the patch pack for prefixes)
-legacy/work/
+# the patches of the patch pack for prefixes and its build: kept locally (the AppImage carries
+# their source with the modules)
+legacy/
 
 # AppImage builds
 dist/

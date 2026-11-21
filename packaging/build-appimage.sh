@@ -83,6 +83,18 @@ if [ -n "$packs" ] && [ -f "$packs/pack.toml" ]; then
     cp -r "$packs" "$APPDIR/opt/patches/$id"
     sed -i 's/\r$//' "$APPDIR/opt/patches/$id/files/bin/"*
     chmod 755 "$APPDIR/opt/patches/$id/files/bin/"*
+    # LGPL: the modules' source goes with them (Wine as released plus these patches); legacy/
+    # is kept locally, not in the repository
+    ver=$(basename "$(dirname "$packs")")
+    if [ -d "$HERE/legacy/$ver/patches" ]; then
+        mkdir -p "$APPDIR/opt/patches/$id/source"
+        cp "$HERE/legacy/$ver/patches/"*.patch "$HERE/legacy/build-pack.sh" "$APPDIR/opt/patches/$id/source/"
+        printf 'The modules in files/ are Wine %s (https://dl.winehq.org/wine/source/) with these patches,\nbuilt by build-pack.sh. LGPL-2.1-or-later, like Wine.\n' "$ver" \
+            > "$APPDIR/opt/patches/$id/source/README"
+    else
+        echo "!!! no legacy/$ver/patches: the AppImage would carry the modules without their source (LGPL)" >&2
+        exit 1
+    fi
 else
     echo ">>> no patch pack for prefixes (run legacy/build-pack.sh first, or set PREFIX_PACK)"
 fi

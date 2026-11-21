@@ -13,7 +13,6 @@ Python 3.12 + PySide6 (QML), shipped as an AppImage. [Русская верси�
 | `winefox/` | the launcher |
 | `packaging/` | the AppImage build, the Windows helpers |
 | `scripts/` | the AutoSDK download and fonts, run by Wine Fox or by hand |
-| [`legacy/`](legacy/README.md) | the patches whose Windows modules Wine Fox carries as its patch pack for prefixes, and the script that builds it |
 | `tools/` | the AutoSDK packer for Windows (`make-autosdk.ps1`), a window inspector for debugging (`wininspect.c`) |
 
 Releases carry the AppImage. Wine-Fx, Wine with our patches, is a repository of its own
@@ -180,7 +179,7 @@ administrator command line, explorer.exe for the Linux file manager) need mingw-
 ## License
 
 Wine Fox: GPL-3.0, see [LICENSE](LICENSE). The patches to Wine and the files of Wine they change
-(`legacy/*/patches`, and Wine-Fx's in its repository): LGPL-2.1-or-later, like Wine. Epic Games' patches
+(Wine-Fx's in its repository; those of the patch pack for prefixes come with the AppImage, `opt/patches/*/source`): LGPL-2.1-or-later, like Wine. Epic Games' patches
 (in the Wine-Fx repository, `versions/*/epic`): MIT, see the `LICENSE` next to them. Microsoft's toolchain, SDKs and
 fonts are not in this repository: the scripts download them on your computer after you accept
 Microsoft's licenses.
