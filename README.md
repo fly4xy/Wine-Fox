@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/screenshots/icon.png" width="96" alt="Wine Fox"></p>
+
 # Wine Fox
 
 A Wine launcher for desktop software (not games): prefixes, the applications in them, Wine
@@ -10,6 +12,18 @@ Python 3.12 + PySide6 (QML), shipped as an AppImage. [Русская верси�
 [Installation guide](https://lis-carter.site/wine-fox/docs.html#install) · [Discord](https://discord.gg/uCd8DH9GVx) ·
 [Wine-Fx](https://github.com/fly4xy/Wine-fx) (Wine with our patches)
 
+<p align="center"><img src="docs/screenshots/apps.webp" alt="Wine Fox: all applications grouped by prefix"></p>
+
+## Screenshots
+
+<table>
+<tr><td align="center" width="50%"><img src="docs/screenshots/prefix.webp" alt="A prefix"><br><sub>A prefix</sub></td><td align="center" width="50%"><img src="docs/screenshots/app-editor.webp" alt="Application settings"><br><sub>Application settings</sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/screenshots/builds.webp" alt="Wine & components"><br><sub>Wine & components</sub></td><td align="center" width="50%"><img src="docs/screenshots/wine-settings.webp" alt="Wine settings"><br><sub>Wine settings</sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/screenshots/registry.webp" alt="Registry editor"><br><sub>Registry editor</sub></td><td align="center" width="50%"><img src="docs/screenshots/settings.webp" alt="Settings"><br><sub>Settings</sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/screenshots/launch-error.webp" alt="A launch problem, explained"><br><sub>A launch problem, explained</sub></td><td align="center" width="50%"><img src="docs/screenshots/uproject.webp" alt="Opening a .uproject: engine, Build, Rebuild"><br><sub>Opening a .uproject: engine, Build, Rebuild</sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/screenshots/script.webp" alt="Running a .bat file"><br><sub>Running a .bat file</sub></td></tr>
+</table>
+
 ## In this repository
 
 | Folder | What |
@@ -20,7 +34,7 @@ Python 3.12 + PySide6 (QML), shipped as an AppImage. [Русская верси�
 | `tools/` | the AutoSDK packer for Windows (`make-autosdk.ps1`), a window inspector for debugging (`wininspect.c`) |
 
 Releases carry the AppImage. Wine-Fx, Wine with our patches, is a repository of its own
-(`../wine-fx`): its patches, build script and file releases, which Wine Fox installs and updates.
+([Wine-fx](https://github.com/fly4xy/Wine-fx)): its patches, build script and file releases, which Wine Fox installs and updates.
 
 ## Running
 
