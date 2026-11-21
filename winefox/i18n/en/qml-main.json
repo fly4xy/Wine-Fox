@@ -1,0 +1,6 @@
+{
+  "As in the system (%n lines)": ["As in the system (%n line)", "As in the system (%n lines)"],
+  "   ·   running, %n processes": ["   ·   running, %n process", "   ·   running, %n processes"],
+  "%n applications %1": ["%n application %1", "%n applications %1"],
+  "in %n prefixes": ["in %n prefix", "in %n prefixes"]
+}

@@ -1,0 +1,19 @@
+#!/bin/sh
+# Wine Fox AppImage entry point.
+#
+# Variables changed here are saved as WINEFOX_ORIG_<name>; Wine Fox restores them for Wine
+# and the programs it starts (winefox/wine.py: host_env), so they see the host environment.
+HERE="$(dirname "$(readlink -f "$0")")"
+
+for var in QT_PLUGIN_PATH QML_IMPORT_PATH QML2_IMPORT_PATH QT_QPA_PLATFORMTHEME PYTHONPATH PYTHONHOME; do
+    eval "export WINEFOX_ORIG_$var=\"\${$var-}\""
+done
+# the host's Qt plugins and QML modules do not match the bundled Qt
+unset QT_PLUGIN_PATH QML_IMPORT_PATH QML2_IMPORT_PATH PYTHONPATH PYTHONHOME
+# native file dialogs (KDE, GNOME) through xdg-desktop-portal
+export QT_QPA_PLATFORMTHEME="${WINEFOX_QT_PLATFORMTHEME:-xdgdesktopportal}"
+
+# the stable DXVK, VKD3D-Proton and DXVK-NVAPI that come with the AppImage
+export WINEFOX_BUNDLED="$HERE/opt/components"
+
+exec "$HERE/opt/python/bin/python3" -I -m winefox "$@"

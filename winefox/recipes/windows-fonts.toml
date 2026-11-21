@@ -1,0 +1,11 @@
+name = "Windows fonts"
+description = "Fonts copied from a Windows installation (Segoe UI, Calibri, Consolas...): a folder like Windows/Fonts or an archive of it. Segoe UI Symbol becomes the fallback of the interface fonts, so arrows and symbols are not boxes."
+
+[[params]]
+id = "source"
+label = "Folder or archive with the fonts"
+kind = "path"
+
+[[steps]]
+action = "fonts"
+source = "{source}"

@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+.venv/
+venv/
+
+# what wine-fx/build.sh downloads, builds and installs next to itself
+wine-fx/wine-source/
+wine-fx/work/
+wine-fx/wine_dist/
+
+# AppImage builds
+dist/
+packaging/AppDir/
+*.AppImage
+
+# screenshots from WINEFOX_SCREENSHOTS runs
+shots/
+
+# editors and systems
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+
+# Windows helpers built by packaging/helpers/build.sh
+packaging/helpers/bin/

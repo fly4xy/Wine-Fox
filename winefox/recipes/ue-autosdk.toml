@@ -1,0 +1,63 @@
+name = "Unreal Engine: MSVC toolchain (AutoSDK)"
+description = "Builds C++ for Unreal Engine without Visual Studio in the prefix. Takes an AutoSDK archive made with tools/make-autosdk.ps1 on a Windows PC: puts it in C:\\AutoSDK, sets UE_SDKS_ROOT, registers its .NET Framework SDK, turns off Visual Studio telemetry (vctip.exe crashes under Wine), adds Epic's MSBuild settings, and makes UnrealBuildTool write Visual Studio 2026 project files."
+
+[[params]]
+id = "archive"
+label = "AutoSDK archive (AutoSDK-*.tar.gz)"
+kind = "file"
+
+[[steps]]
+action = "extract"
+archive = "{archive}"
+to = 'C:\'
+
+[[steps]]
+action = "reg"
+key = 'HKCU\Environment'
+name = "UE_SDKS_ROOT"
+value = 'C:\AutoSDK'
+
+[[steps]]
+action = "netfx"
+
+[[steps]]
+action = "reg"
+key = 'HKLM\Software\Microsoft\VSCommon\17.0\SQM'
+name = "OptIn"
+type = "REG_DWORD"
+value = 0
+
+[[steps]]
+action = "reg"
+key = 'HKLM\Software\Microsoft\VSCommon\18.0\SQM'
+name = "OptIn"
+type = "REG_DWORD"
+value = 0
+
+[[steps]]
+action = "reg"
+key = 'HKLM\Software\Wow6432Node\Microsoft\VSCommon\17.0\SQM'
+name = "OptIn"
+type = "REG_DWORD"
+value = 0
+
+[[steps]]
+action = "reg"
+key = 'HKLM\Software\Wow6432Node\Microsoft\VSCommon\18.0\SQM'
+name = "OptIn"
+type = "REG_DWORD"
+value = 0
+
+[[steps]]
+action = "copy"
+from = "files/msbuild/Custom.After.Microsoft.Common.Props"
+to = 'C:\users\{user}\AppData\Local\Microsoft\MSBuild\Current\Imports\Microsoft.Common.props\ImportAfter'
+
+[[steps]]
+action = "copy"
+from = "files/msbuild/Custom.After.Microsoft.NETFramework.Props"
+to = 'C:\users\{user}\AppData\Local\Microsoft\MSBuild\Current\Microsoft.NETFramework.props\ImportAfter'
+
+[[steps]]
+action = "ubt-config"
+version = "VisualStudio2026"

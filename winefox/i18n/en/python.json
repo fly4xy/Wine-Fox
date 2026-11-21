@@ -1,0 +1,9 @@
+{
+  "Installed %n file(s) in %1": ["Installed %n file in %1", "Installed %n files in %1"],
+  "Restored %n file(s) in %1": ["Restored %n file in %1", "Restored %n files in %1"],
+  "Installed %n file(s) into %1: programs started from now on use them": ["Installed %n file into %1: programs started from now on use it", "Installed %n files into %1: programs started from now on use them"],
+  "Took out %n file(s) of %1: programs started from now on use Wine’s own ones": ["Took out %n file of %1: programs started from now on use Wine’s own one", "Took out %n files of %1: programs started from now on use Wine’s own ones"],
+  "import: %n not imported": ["import: %n not imported", "import: %n not imported"],
+  "Made %1 and compile_commands.json for %n file(s)": ["Made %1 and compile_commands.json for %n file", "Made %1 and compile_commands.json for %n files"],
+  "Added %n: %1": ["Added %n: %1", "Added %n: %1"]
+}

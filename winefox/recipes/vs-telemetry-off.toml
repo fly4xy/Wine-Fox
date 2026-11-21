@@ -1,0 +1,30 @@
+name = "Visual Studio telemetry off"
+description = "Stops Visual Studio's build tools from starting vctip.exe, which crashes under Wine and can fail builds."
+
+[[steps]]
+action = "reg"
+key = 'HKLM\Software\Microsoft\VSCommon\17.0\SQM'
+name = "OptIn"
+type = "REG_DWORD"
+value = 0
+
+[[steps]]
+action = "reg"
+key = 'HKLM\Software\Microsoft\VSCommon\18.0\SQM'
+name = "OptIn"
+type = "REG_DWORD"
+value = 0
+
+[[steps]]
+action = "reg"
+key = 'HKLM\Software\Wow6432Node\Microsoft\VSCommon\17.0\SQM'
+name = "OptIn"
+type = "REG_DWORD"
+value = 0
+
+[[steps]]
+action = "reg"
+key = 'HKLM\Software\Wow6432Node\Microsoft\VSCommon\18.0\SQM'
+name = "OptIn"
+type = "REG_DWORD"
+value = 0

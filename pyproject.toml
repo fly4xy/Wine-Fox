@@ -1,0 +1,22 @@
+[project]
+name = "winefox"
+version = "0.10"
+description = "Wine launcher for desktop software: prefixes, applications, Wine builds"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+classifiers = ["License :: OSI Approved :: GNU General Public License v3 (GPLv3)"]
+dependencies = ["PySide6-Essentials>=6.6", "tomli-w>=1.0", "zstandard>=0.22", "certifi"]
+
+[project.scripts]
+winefox = "winefox.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["winefox*"]
+
+[tool.setuptools.package-data]
+"winefox.gui" = ["qml/*.qml", "qml/qmldir", "qml/*.png"]
+"winefox" = ["recipes/*.toml", "recipes/files/*/*", "i18n/*/*.json"]

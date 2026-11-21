@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Wine Fox
+GenericName=Wine launcher
+Comment=Run Windows software with Wine: prefixes, applications, Wine builds
+Exec=winefox
+Icon=winefox
+Terminal=false
+Categories=Utility;
+Keywords=wine;windows;exe;prefix;
+StartupWMClass=winefox
