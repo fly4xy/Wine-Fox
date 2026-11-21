@@ -6,6 +6,10 @@
 
 Python 3.12 + PySide6 (QML), распространяется как AppImage. [English version](README.md).
 
+**[Скачать AppImage](https://lis-carter.site/wine-fox/#download)** · [Сайт](https://lis-carter.site/wine-fox/) · [Вики](https://lis-carter.site/wine-fox/docs.html) ·
+[Как установить](https://lis-carter.site/wine-fox/docs.html#install) · [Discord](https://discord.gg/uCd8DH9GVx) ·
+[Wine-Fx](https://github.com/fly4xy/Wine-fx) (Wine с нашими патчами)
+
 ## Что в репозитории
 
 | Папка | Что |

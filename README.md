@@ -6,6 +6,10 @@ Made for running big Windows tools like Unreal Engine under Wine on a Linux desk
 
 Python 3.12 + PySide6 (QML), shipped as an AppImage. [Русская версия](README.ru.md).
 
+**[Download the AppImage](https://lis-carter.site/wine-fox/#download)** · [Website](https://lis-carter.site/wine-fox/) · [Docs (wiki)](https://lis-carter.site/wine-fox/docs.html) ·
+[Installation guide](https://lis-carter.site/wine-fox/docs.html#install) · [Discord](https://discord.gg/uCd8DH9GVx) ·
+[Wine-Fx](https://github.com/fly4xy/Wine-fx) (Wine with our patches)
+
 ## In this repository
 
 | Folder | What |
