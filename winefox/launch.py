@@ -14,7 +14,7 @@ import threading
 import time
 from pathlib import Path, PureWindowsPath
 
-from . import components, desktop, filemanager, focus, ide, registry, servers, users, wincolors
+from . import components, desktop, filemanager, focus, ide, nugetroots, registry, servers, users, wincolors
 from . import log as wflog
 from . import paths, wine
 from .config import App, Prefix, Store
@@ -698,6 +698,11 @@ def run_app(store: Store, app: App, extra: list[str] = (), watch: bool = True, o
         # UnrealBuildTool's MSBuild nodes otherwise stay waiting for the next build and keep
         # the prefix running after the editor is closed
         env.setdefault("MSBUILDDISABLENODEREUSE", "1")
+        # the editor's project files and builds run UnrealBuildTool, whose NuGet restore needs them
+        try:
+            nugetroots.apply(build, env, prefix_path, exe_unix.parents[3])     # Engine/Binaries/Win64/x.exe
+        except (OSError, registry.RegistryError) as e:
+            log.warning("NuGet root certificates: %s", e)
     if diagnostic:
         env["WINEDEBUG"] = DIAGNOSTIC_DEBUG
         # winedbg prints the crash and its backtrace to the output only without its dialog

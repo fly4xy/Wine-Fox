@@ -69,6 +69,9 @@ Wine Fox работает в одном экземпляре: повторный
 - **Проекты Unreal Engine.** При открытии `.uproject` можно выбрать движок (любое приложение
   `UnrealEditor.exe` без проекта в аргументах), открыть проект, собрать или пересобрать его
   editor-таргет (сначала генерируются файлы проекта) или записать движок в `EngineAssociation`.
+  Перед запуском редактора или сборки в префикс добавляются корневые сертификаты, которым доверяет
+  NuGet (из .NET SDK движка) и которых уже нет в списках Linux: без них restore в UnrealBuildTool
+  падает на старых пакетах с NU3018 / NU3028 / NU3037.
 - **C++ Unreal в редакторе кода на Linux** (Settings, Code editor). Build и Open проекта (и галочка
   *VS Code files* в окне сборки) заодно превращают его файлы для VS Code в линуксовый workspace, `compile_commands.json` для clangd и
   `c_cpp_properties.json`: Unix-пути, флаги и стандарт языка самой сборки, библиотека MSVC и
@@ -185,6 +188,7 @@ Windows-помощникам (`packaging/helpers`: командная
 | `wine.py`, `components.py` | сборки Wine; DXVK / VKD3D-Proton / DXVK-NVAPI и загрузки |
 | `discover.py`, `icons.py`, `desktop.py`, `lutris.py` | установленные программы, иконки, пункты меню и автозапуска, Lutris |
 | `unreal.py`, `ide.py` | `.uproject`: движки, открытие, сборка, EngineAssociation; файлы VS Code для Linux |
+| `nugetroots.py` | корневые сертификаты NuGet в префиксах Unreal Engine |
 | `filemanager.py`, `packaging/helpers/` | explorer.exe, открывающий места в файловом менеджере Linux; elevate.exe |
 | `usage.py` | как часто запускаются приложения (меню трея) |
 | `autosdk.py`, `scripts/` | загрузка AutoSDK (fetch-autosdk.sh) и шрифты (install-fonts.sh) |

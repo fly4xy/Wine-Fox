@@ -1,6 +1,6 @@
 [project]
 name = "winefox"
-version = "1.0"
+version = "1.0.1"
 description = "Wine launcher for desktop software: prefixes, applications, Wine builds"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }

@@ -71,6 +71,9 @@ Only one Wine Fox runs at a time: starting it again shows the window that is alr
   that is an `UnrealEditor.exe` without a project in its arguments), open the project, build or
   rebuild its editor target (the project files are generated first), or write the engine into
   the project's `EngineAssociation`.
+  Before the editor or a build starts, the prefix gets the root certificates NuGet trusts (from
+  the engine's .NET SDK) that Linux CA lists no longer have: without them UnrealBuildTool's
+  restore fails on older packages with NU3018 / NU3028 / NU3037.
 - **Unreal C++ in a Linux code editor** (Settings, Code editor). Build and Open of a project
   (and the build window's *VS Code files* box) also turn its VS Code files into a Linux workspace, `compile_commands.json` for clangd and
   `c_cpp_properties.json`: Unix paths, the build's own flags and language standard, the MSVC
@@ -187,6 +190,7 @@ administrator command line, explorer.exe for the Linux file manager) need mingw-
 | `wine.py`, `components.py` | Wine builds; DXVK / VKD3D-Proton / DXVK-NVAPI and downloads |
 | `discover.py`, `icons.py`, `desktop.py`, `lutris.py` | installed programs, icons, menu and autostart entries, Lutris |
 | `unreal.py`, `ide.py` | `.uproject`: engines, open, build, EngineAssociation; VS Code files for Linux |
+| `nugetroots.py` | NuGet's root certificates in prefixes of Unreal Engine |
 | `filemanager.py`, `packaging/helpers/` | explorer.exe that opens places in the Linux file manager; elevate.exe |
 | `usage.py` | how often applications run (the tray menu) |
 | `autosdk.py`, `scripts/` | the AutoSDK download (fetch-autosdk.sh) and fonts (install-fonts.sh) |
