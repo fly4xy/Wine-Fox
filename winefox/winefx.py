@@ -1,5 +1,5 @@
 """Wine-Fx, Wine with Wine Fox's fixes, from its file releases (the Wine-Fx repository's
-wine-fx-install.py does the same from a terminal; keep the two alike).
+install.sh does the same from a terminal; keep the two alike, overlay.json included).
 
 releases.json lists the releases: for each, the base (a ready Wine as released, Kron4ek's
 build) and the overlay (only the files the patches change
@@ -136,8 +136,23 @@ def _apply(dest: Path, overlay: Path) -> dict:
         files[path] = {"sha256": info["sha256"], "new": new}
     state = {"release": manifest["release"], "wine": manifest["wine"], "fx": manifest["fx"], "files": files}
     (dest / STATE).parent.mkdir(parents=True, exist_ok=True)
-    (dest / STATE).write_text(json.dumps(state, indent=1))
+    (dest / STATE).write_text(_state_text(state))
     return state
+
+
+def _state_text(state: dict) -> str:
+    """overlay.json as install.sh writes and reads it: one file a line."""
+    files = ",
+".join(f'  {json.dumps(path)}: {json.dumps(info)}' for path, info in state["files"].items())
+    head = ",
+".join(f' {json.dumps(k)}: {json.dumps(state[k])}' for k in ("release", "wine", "fx"))
+    return f'{{
+{head},
+ "files": {{
+{files}
+ }}
+}}
+'
 
 
 def install(release: dict, dest: Path, progress=None) -> dict:
