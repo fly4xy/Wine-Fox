@@ -698,9 +698,12 @@ def run_app(store: Store, app: App, extra: list[str] = (), watch: bool = True, o
         # UnrealBuildTool's MSBuild nodes otherwise stay waiting for the next build and keep
         # the prefix running after the editor is closed
         env.setdefault("MSBUILDDISABLENODEREUSE", "1")
-        # the editor's project files and builds run UnrealBuildTool, whose NuGet restore needs them
+    # anything in a prefix with an engine can run UnrealBuildTool (the editor, a build, UnrealGameSync):
+    # its NuGet restore needs these roots
+    engines = _engine_roots(store, prefix, prefix_path)
+    if engines:
         try:
-            nugetroots.apply(build, env, prefix_path, exe_unix.parents[3])     # Engine/Binaries/Win64/x.exe
+            nugetroots.apply(build, env, prefix_path, engines)
         except (OSError, registry.RegistryError) as e:
             log.warning("NuGet root certificates: %s", e)
     if diagnostic:
@@ -731,6 +734,15 @@ def run_app(store: Store, app: App, extra: list[str] = (), watch: bool = True, o
     elif console:
         cmd = program_in_console(store, str(build.wine), env, exe, args, cwd)
     return spawn(cmd, env, cwd, app.id or "app", keep, watch, on_exit, info)
+
+
+def _engine_roots(store: Store, prefix: Prefix, prefix_path: Path) -> list[Path]:
+    """The engines of a prefix: the folders above Engine/ of its Unreal Editor applications."""
+    roots = []
+    for a in store.apps.values():
+        if a.prefix == prefix.id and PureWindowsPath(a.exe.replace("/", "\\")).name.lower() in ("unrealeditor.exe", "ue4editor.exe"):
+            roots.append(to_unix(prefix_path, a.exe).parents[3])        # Engine/Binaries/Win64/x.exe
+    return roots
 
 
 def _arg_marks(app: App, prefix_path: Path) -> list[str]:

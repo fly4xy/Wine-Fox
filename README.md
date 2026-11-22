@@ -71,7 +71,7 @@ Only one Wine Fox runs at a time: starting it again shows the window that is alr
   that is an `UnrealEditor.exe` without a project in its arguments), open the project, build or
   rebuild its editor target (the project files are generated first), or write the engine into
   the project's `EngineAssociation`.
-  Before the editor or a build starts, the prefix gets the root certificates NuGet trusts (from
+  Before any program of a prefix with an engine starts (the editor, a build, UnrealGameSync), the prefix gets the root certificates NuGet trusts (from
   the engine's .NET SDK) that Linux CA lists no longer have: without them UnrealBuildTool's
   restore fails on older packages with NU3018 / NU3028 / NU3037.
 - **Unreal C++ in a Linux code editor** (Settings, Code editor). Build and Open of a project

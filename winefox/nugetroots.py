@@ -5,8 +5,12 @@ Linux CA lists are made for HTTPS: DigiCert Assured ID Root CA, which signed and
 the NuGet packages of 2019-2021 (Polly 7, OpenTracing...), is no longer in them. UnrealBuildTool's
 restore then fails with NU3018 / NU3028 / NU3037. The .NET SDK that comes with the engine has
 the lists NuGet itself trusts on Linux (sdk/<version>/trustedroots/*.pem): the roots of them the
-prefix lacks go into its Root store. Wine leaves them there (it only takes out roots it
-imported from the host).
+prefix lacks go into its Root store.
+
+Wine takes out only the roots it imported from the host (HKLM\Software\Wine\HostImportedCertificates).
+A prefix whose Root store Wine never opened has no such list yet, and Wine's first opening
+counts every root there as imported: the list is then written first, with the roots already
+there, so that the ones put in here stay.
 """
 from __future__ import annotations
 
@@ -21,7 +25,10 @@ from . import registry, wine
 
 log = logging.getLogger(__name__)
 
+# the roots Wine Fox put in: a running prefix's system.reg is written by wineserver only later
+_DONE = ".winefox/nugetroots.txt"
 _KEY = r"HKEY_LOCAL_MACHINE\Software\Microsoft\SystemCertificates\Root\Certificates"
+_IMPORTED = r"HKEY_LOCAL_MACHINE\Software\Wine\HostImportedCertificates"
 _PEM = re.compile(rb"-----BEGIN CERTIFICATE-----(.+?)-----END CERTIFICATE-----", re.S)
 # in system.reg: [Software\\Microsoft\\SystemCertificates\\Root\\Certificates\\<SHA-1>]
 _HAVE = re.compile(r"SystemCertificates\\\\Root\\\\Certificates\\\\([0-9A-Fa-f]{40})\]")
@@ -40,31 +47,51 @@ def blob(der: bytes) -> bytes:
     return _element(9, _USAGE) + _element(32, der)
 
 
-def nuget_roots(engine_root: Path) -> dict[str, bytes]:
-    """SHA-1 (upper case hex) -> DER of the roots in the engine's .NET SDK lists."""
+def nuget_roots(engine_roots: list[Path]) -> dict[str, bytes]:
+    """SHA-1 (upper case hex) -> DER of the roots in the engines' .NET SDK lists."""
     roots = {}
-    for pem in sorted(engine_root.glob("Engine/Binaries/ThirdParty/DotNet/*/*/sdk/*/trustedroots/*.pem")):
-        for m in _PEM.finditer(pem.read_bytes()):
-            der = base64.b64decode(b"".join(m.group(1).split()))
-            roots[hashlib.sha1(der).hexdigest().upper()] = der
+    for root in engine_roots:
+        for pem in sorted(root.glob("Engine/Binaries/ThirdParty/DotNet/*/*/sdk/*/trustedroots/*.pem")):
+            for m in _PEM.finditer(pem.read_bytes()):
+                der = base64.b64decode(b"".join(m.group(1).split()))
+                roots[hashlib.sha1(der).hexdigest().upper()] = der
     return roots
 
 
-def missing(prefix_path: Path, roots: dict[str, bytes]) -> dict[str, bytes]:
+def _state(prefix_path: Path) -> tuple[set[str], set[str], bool]:
+    """The roots in the prefix's Root store, the ones Wine Fox put in, whether Wine keeps its list."""
     try:
-        have = {h.upper() for h in _HAVE.findall((prefix_path / "system.reg").read_text(errors="replace"))}
+        text = (prefix_path / "system.reg").read_text(errors="replace")
     except OSError:
-        have = set()
-    return {h: der for h, der in roots.items() if h not in have}
+        text = ""
+    try:
+        done = set((prefix_path / _DONE).read_text().split())
+    except OSError:
+        done = set()
+    return {h.upper() for h in _HAVE.findall(text)}, done, "[Software\\\\Wine\\\\HostImportedCertificates]" in text
 
 
-def apply(build: wine.WineBuild, env: dict[str, str], prefix_path: Path, engine_root: Path) -> int:
-    """Put the engine's NuGet roots the prefix lacks into its Root store; how many went in."""
-    add = missing(prefix_path, nuget_roots(engine_root))
-    if add:
-        lines = []
-        for sha1, der in add.items():
-            lines += [f"[{_KEY}\\{sha1}]", f'"Blob"=hex:{registry._hex(blob(der))}']
-        registry.apply(build, env, lines)
-        log.info("%d NuGet root certificates of %s put into %s", len(add), engine_root, prefix_path)
+def missing(prefix_path: Path, roots: dict[str, bytes]) -> dict[str, bytes]:
+    have, done, _ = _state(prefix_path)
+    return {h: der for h, der in roots.items() if h not in have | done}
+
+
+def apply(build: wine.WineBuild, env: dict[str, str], prefix_path: Path, engine_roots: list[Path]) -> int:
+    """Put the engines' NuGet roots the prefix lacks into its Root store; how many went in.
+    Roots it has already are not put in again: then Wine is not run at all."""
+    have, done, listed = _state(prefix_path)
+    add = {h: der for h, der in nuget_roots(engine_roots).items() if h not in have | done}
+    if not add:
+        return 0
+    lines = []
+    if not listed:     # what Wine's first opening would list: the roots there, not ours
+        lines += [f"[{_IMPORTED}]", *(f'"{h}"=dword:00000001' for h in sorted(have - done))]
+    for sha1, der in add.items():
+        lines += [f"[{_KEY}\\{sha1}]", f'"Blob"=hex:{registry._hex(blob(der))}']
+    registry.apply(build, env, lines)
+    done_file = prefix_path / _DONE
+    done_file.parent.mkdir(exist_ok=True)
+    with open(done_file, "a") as out:
+        out.writelines(sha1 + "\n" for sha1 in add)
+    log.info("%d NuGet root certificates put into %s", len(add), prefix_path)
     return len(add)

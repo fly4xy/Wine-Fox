@@ -11,7 +11,7 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 
-from . import desktop, ide, launch, nugetroots, paths, registry, wine
+from . import desktop, ide, launch, paths, wine
 from .config import App, Prefix, Store
 from .i18n import tr
 
@@ -270,14 +270,6 @@ def build(store: Store, project: Path, engine: Engine, rebuild: bool = False, co
     wrapper.write_text("\r\n".join(lines) + "\r\n", encoding="utf-8")
     app = dataclasses.replace(engine.app, id=f"{engine.app.id}-build", name=f"{project.stem} build",
                               exe=str(wrapper), args="", workdir="")
-    # UnrealBuildTool's NuGet restore needs the roots NuGet trusts (nugetroots)
-    build_wine = launch.resolve_build(store, engine.app.build, engine.prefix.build)
-    env = build_wine.env(engine.prefix.path)
-    env.update(engine.prefix.env)
-    try:
-        nugetroots.apply(build_wine, env, prefix_path, engine.root)
-    except (OSError, registry.RegistryError) as e:
-        log.warning("NuGet root certificates: %s", e)
     started = launch.run_app(store, app, watch=False)
     if code_editor:
         # the build runs in its terminal: a process of its own waits for the VS Code files it
