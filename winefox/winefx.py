@@ -1,8 +1,8 @@
 """Wine-Fx, Wine with Wine Fox's fixes, from its file releases (the Wine-Fx repository's
 wine-fx-install.py does the same from a terminal; keep the two alike).
 
-releases.json lists the releases: for each, the base (Wine as released, built by Wine-Fx's
-build.sh --vanilla, once per Wine version) and the overlay (only the files the patches change
+releases.json lists the releases: for each, the base (a ready Wine as released, Kron4ek's
+build) and the overlay (only the files the patches change
 or add, with manifest.json). A release is installed over the base: the files it replaces are
 kept next to them as <file>.wfx-orig and share/wine-fx/overlay.json lists what it changed, so
 that an update first puts them back, then puts the new release in.
@@ -21,7 +21,7 @@ from pathlib import Path
 from . import components
 from .i18n import tr
 
-RELEASES = os.environ.get("WINEFX_RELEASES", "https://downloads.lis-carter.site/wine-fx/releases.json")
+RELEASES = os.environ.get("WINEFX_RELEASES", "https://github.com/fly4xy/Wine-fx/releases/latest/download/releases.json")
 STATE = "share/wine-fx/overlay.json"
 ORIG = ".wfx-orig"
 
@@ -108,14 +108,15 @@ def undo(dest: Path) -> list[str]:
         state = json.loads((dest / STATE).read_text())
     except (OSError, ValueError):
         return []
-    for path, info in state["files"].items():
+    for path, info in state.get("files", {}).items():
         target, orig = dest / path, dest / (path + ORIG)
         if orig.exists() or orig.is_symlink():
             os.replace(orig, target)
         elif info.get("new") and (target.exists() or target.is_symlink()):
             target.unlink()
-    (dest / STATE).unlink()
-    return list(state["files"])
+    # the Wine version stays known (a base from elsewhere has no version.txt of ours)
+    (dest / STATE).write_text(json.dumps({"wine": state["wine"]}))
+    return list(state.get("files", {}))
 
 
 def _apply(dest: Path, overlay: Path) -> dict:

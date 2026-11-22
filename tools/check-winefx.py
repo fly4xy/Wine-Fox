@@ -44,7 +44,7 @@ assert not (dest / "lib/new.so").exists() and winefx.installed(dest)["release"] 
 assert not winefx.newer(b, dest)
 winefx.undo(dest)
 assert (dest / "lib/a.so").read_bytes() == b"base-a" and not (dest / "lib/a.so.wfx-orig").exists()
-assert winefx.installed(dest) == {"release": "Wine 11.22 (vanilla)", "wine": "11.22", "fx": ""}, winefx.installed(dest)
+assert winefx.installed(dest) == {"wine": "11.22"}, winefx.installed(dest)   # the version stays known
 bad = json.loads(json.dumps(a)); bad["overlay"]["sha256"] = "0" * 64
 try:
     winefx.install(bad, dest); raise SystemExit("damaged download accepted")
