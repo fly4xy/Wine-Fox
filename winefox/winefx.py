@@ -142,17 +142,9 @@ def _apply(dest: Path, overlay: Path) -> dict:
 
 def _state_text(state: dict) -> str:
     """overlay.json as install.sh writes and reads it: one file a line."""
-    files = ",
-".join(f'  {json.dumps(path)}: {json.dumps(info)}' for path, info in state["files"].items())
-    head = ",
-".join(f' {json.dumps(k)}: {json.dumps(state[k])}' for k in ("release", "wine", "fx"))
-    return f'{{
-{head},
- "files": {{
-{files}
- }}
-}}
-'
+    files = ",\n".join(f'  {json.dumps(path)}: {json.dumps(info)}' for path, info in state["files"].items())
+    head = ",\n".join(f' {json.dumps(k)}: {json.dumps(state[k])}' for k in ("release", "wine", "fx"))
+    return f'{{\n{head},\n "files": {{\n{files}\n }}\n}}\n'
 
 
 def install(release: dict, dest: Path, progress=None) -> dict:
