@@ -132,6 +132,8 @@ echo ">>> packing $OUT"
 ARCH=x86_64 "$TOOL" --no-appstream "$APPDIR" "$OUT" >"$WORK/appimagetool.log" 2>&1 ||
     { tail -20 "$WORK/appimagetool.log"; exit 1; }
 du -h "$OUT"
+# only the current build stays in dist/: the older ones go once this one is packed
+find "$HERE/dist" -maxdepth 1 -name 'WineFox-*-x86_64.AppImage' ! -path "$OUT" -print -delete
 
 # what Wine Fox's update check reads (winefox/updates.py): put it on the server next to the
 # AppImage, at $UPDATE_BASE/latest.json
