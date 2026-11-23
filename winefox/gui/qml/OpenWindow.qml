@@ -6,10 +6,13 @@ import QtQuick.Layouts
 // which prefix to run it in.
 ApplicationWindow {
     id: window
+    // as tall as its content, the title bar of the own frame included: fonts, translations and
+    // the desktop's scale differ, and nothing may be cut off
+    readonly property int contentHeight: form.implicitHeight + form.anchors.topMargin + Theme.pad
     width: 520
-    height: 430
+    height: Math.max(430, contentHeight)
     minimumWidth: 420
-    minimumHeight: 380
+    minimumHeight: contentHeight
     visible: true
     title: qsTr("Run with Wine Fox")
     color: Theme.bg
@@ -37,6 +40,7 @@ ApplicationWindow {
     function screenshotStep(i) {}
 
     ColumnLayout {
+        id: form
         anchors.fill: parent
         anchors.margins: Theme.pad
         anchors.topMargin: Theme.pad + frame.barHeight - (frame.own ? Theme.pad / 2 : 0)

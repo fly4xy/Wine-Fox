@@ -7,10 +7,13 @@ import QtQuick.Layouts
 // the project to that engine.
 ApplicationWindow {
     id: window
+    // as tall as its content, the title bar of the own frame included: fonts, translations and
+    // the desktop's scale differ, and nothing may be cut off
+    readonly property int contentHeight: form.implicitHeight + form.anchors.topMargin + Theme.pad
     width: 600
-    height: 470
+    height: Math.max(470, contentHeight)
     minimumWidth: 480
-    minimumHeight: 420
+    minimumHeight: contentHeight
     visible: true
     title: qsTr("Unreal project · Wine Fox")
     color: Theme.bg
@@ -49,6 +52,7 @@ ApplicationWindow {
     function screenshotStep(i) {}
 
     ColumnLayout {
+        id: form
         anchors.fill: parent
         anchors.margins: Theme.pad
         anchors.topMargin: Theme.pad + frame.barHeight - (frame.own ? Theme.pad / 2 : 0)

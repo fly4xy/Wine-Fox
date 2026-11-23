@@ -7,11 +7,13 @@ import QtQuick.Layouts
 // runs in and its arguments. The window stays until the script runs, so an error shows here.
 ApplicationWindow {
     id: window
+    // as tall as its content, the title bar of the own frame included: fonts, translations and
+    // the desktop's scale differ, and nothing may be cut off
+    readonly property int contentHeight: form.implicitHeight + form.anchors.topMargin + Theme.pad
     width: 560
-    // as tall as the form: fonts and the desktop's scale differ
-    height: Math.max(440, form.implicitHeight + 2 * Theme.pad)
+    height: Math.max(440, contentHeight)
     minimumWidth: 460
-    minimumHeight: form.implicitHeight + 2 * Theme.pad
+    minimumHeight: contentHeight
     visible: true
     title: qsTr("Run script · Wine Fox")
     color: Theme.bg

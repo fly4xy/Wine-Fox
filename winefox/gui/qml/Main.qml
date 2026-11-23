@@ -85,6 +85,7 @@ ApplicationWindow {
     RowLayout {
         anchors.fill: parent
         anchors.topMargin: frame.barHeight
+        anchors.bottomMargin: statusBar.visible ? statusBar.height : 0
         spacing: 0
 
         // ------------------------------------------------------------ sidebar
@@ -193,19 +194,6 @@ ApplicationWindow {
                 }
                 NavButton { text: qsTr("Settings"); active: window.page === 4; onClicked: window.showPage(4) }
 
-                RowLayout {
-                    visible: backend.busy !== ""
-                    Layout.topMargin: 6
-                    spacing: 8
-                    BusyIndicator { implicitWidth: 18; implicitHeight: 18; running: parent.visible }
-                    Text {
-                        Layout.fillWidth: true
-                        text: backend.busy
-                        color: Theme.dim
-                        font.pixelSize: Theme.smallFont
-                        elide: Text.ElideRight
-                    }
-                }
             }
         }
 
@@ -329,6 +317,74 @@ ApplicationWindow {
         onAccepted: backend.importPrefixes(backend.localPath(selectedFolder.toString()))
     }
 
+    // ---------------------------------------------------------------- status bar
+    // What Wine Fox is doing, across the bottom of the window: downloads (Wine builds, components,
+    // Wine Fox's own update) with their progress, else the work in the background, with a moving bar
+    Rectangle {
+        id: statusBar
+        readonly property var names: Object.keys(backend.downloads)
+        readonly property int percent: {
+            var sum = 0
+            for (var i = 0; i < names.length; i++) sum += backend.downloads[names[i]]
+            return names.length ? Math.round(sum / names.length) : 0
+        }
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 34
+        visible: names.length > 0 || backend.busy !== ""
+        color: Theme.sidebar
+        Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: Theme.border }
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 16
+            anchors.rightMargin: 16
+            spacing: 12
+            Text {
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1
+                text: statusBar.names.length ? statusBar.names.join(", ") + "  ·  " + statusBar.percent + "%" : backend.busy
+                color: Theme.dim
+                font.pixelSize: Theme.smallFont
+                elide: Text.ElideRight
+            }
+            // the progress: how far the downloads are, or a block moving to and fro
+            Rectangle {
+                id: track
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1
+                Layout.maximumWidth: 420
+                height: 6
+                radius: 3
+                color: Theme.border
+                clip: true
+                Rectangle {
+                    visible: statusBar.names.length > 0
+                    width: track.width * statusBar.percent / 100
+                    height: parent.height
+                    radius: 3
+                    color: Theme.accent
+                    Behavior on width { NumberAnimation { duration: 200 } }
+                }
+                Rectangle {
+                    id: block
+                    visible: statusBar.names.length === 0
+                    width: track.width / 4
+                    height: parent.height
+                    radius: 3
+                    color: Theme.accent
+                    SequentialAnimation on x {
+                        running: block.visible && statusBar.visible
+                        loops: Animation.Infinite
+                        NumberAnimation { from: 0; to: track.width - block.width; duration: 900; easing.type: Easing.InOutQuad }
+                        NumberAnimation { from: track.width - block.width; to: 0; duration: 900; easing.type: Easing.InOutQuad }
+                    }
+                }
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- notifications
     Rectangle {
         id: toast
@@ -336,7 +392,7 @@ ApplicationWindow {
         property alias text: toastText.text
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 24
+        anchors.bottomMargin: 24 + (statusBar.visible ? statusBar.height : 0)
         width: Math.min(toastText.implicitWidth + 40, parent.width - 80)
         height: toastText.implicitHeight + 22
         radius: Theme.radius
