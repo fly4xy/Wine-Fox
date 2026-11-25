@@ -418,9 +418,101 @@ def wanted_display(app: App, prefix: Prefix) -> str:
     return display
 
 
+def _tool_on(store: Store, app: App, prefix: Prefix, name: str) -> bool:
+    """A tool (gamescope, mangohud, gamemode) for the application: its own choice, else its
+    prefix's, else Settings' (off by default)."""
+    return {"on": True, "off": False}.get(getattr(app, name) or getattr(prefix, name),
+                                          getattr(store.settings, name))
+
+
+def wrappers(store: Store, app: App, prefix: Prefix) -> list[str]:
+    """What the application's command runs after: gamemoderun, gamescope ... --, mangohud
+    (the overlay inside gamescope's window); the ones not installed are left out."""
+    def tool(name: str, exe: str) -> list[str]:
+        if not _tool_on(store, app, prefix, name):
+            return []
+        if not (path := shutil.which(exe)):
+            log.warning("%s: %s is on but not installed, running without it", app.name, exe)
+            return []
+        return [path]
+    return tool("gamemode", "gamemoderun") + gamescope(store, app, prefix) + tool("mangohud", "mangohud")
+
+
+def gamescope(store: Store, app: App, prefix: Prefix) -> list[str]:
+    """The gamescope command the application runs after, [] when off: its own choice, else its
+    prefix's, else Settings' (off by default); the options likewise."""
+    if not _tool_on(store, app, prefix, "gamescope"):
+        return []
+    exe = shutil.which("gamescope")
+    if not exe:
+        log.warning("%s: gamescope is on but not installed, running without it", app.name)
+        return []
+    options = app.gamescope_args or prefix.gamescope_args or store.settings.gamescope_args
+    try:
+        return [exe, *shlex.split(options), "--"]
+    except ValueError as e:
+        log.warning("%s: gamescope options %r: %s, running without them", app.name, options, e)
+        return [exe, "--"]
+
+
+_GPU_VENDORS = {"0x10de": "NVIDIA", "0x1002": "AMD", "0x8086": "Intel"}
+
+
+def gpus(drm: Path = Path("/sys/class/drm")) -> list[dict[str, str]]:
+    """The GPUs: id (PCI slot, 0000:01:00.0), vendor and device (0x...), driver, name."""
+    found: dict[str, dict[str, str]] = {}
+    for card in sorted(drm.glob("card[0-9]*")):
+        if "-" in card.name:                          # card1-DP-2: a connector, not a GPU
+            continue
+        dev = card / "device"
+        try:
+            uevent = dict(line.split("=", 1) for line in (dev / "uevent").read_text().splitlines() if "=" in line)
+            vendor, device = (dev / "vendor").read_text().strip(), (dev / "device").read_text().strip()
+        except OSError:
+            continue
+        slot = uevent.get("PCI_SLOT_NAME", "")
+        if slot and slot not in found:
+            found[slot] = {"id": slot, "vendor": vendor, "device": device, "driver": uevent.get("DRIVER", ""),
+                           "name": _gpu_name(slot, vendor)}
+    return list(found.values())
+
+
+def _gpu_name(slot: str, vendor: str) -> str:
+    """lspci's name of the GPU (its device, else vendor), else the vendor's."""
+    try:
+        out = subprocess.run(["lspci", "-mm", "-s", slot], capture_output=True, text=True, timeout=3).stdout
+        fields = shlex.split(out)          # slot "class" "vendor" "device" ...
+        if len(fields) >= 4:
+            return fields[3]
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass
+    return f"{_GPU_VENDORS.get(vendor, vendor)} ({slot})"
+
+
+def gpu_env(slot: str, all_gpus: list[dict[str, str]] | None = None) -> dict[str, str]:
+    """The variables that put OpenGL and Vulkan (so DXVK, VKD3D) on the GPU at slot: Mesa's
+    DRI_PRIME and device selection, NVIDIA's PRIME render offload; {} for none or not found."""
+    if not slot:
+        return {}
+    all_gpus = gpus() if all_gpus is None else all_gpus
+    gpu = next((g for g in all_gpus if g["id"] == slot), None)
+    if not gpu:
+        log.warning("GPU %s not found, the default one is used", slot)
+        return {}
+    env = {"DRI_PRIME": "pci-" + re.sub(r"[:.]", "_", slot),
+           "MESA_VK_DEVICE_SELECT": f"{gpu['vendor'].removeprefix('0x')}:{gpu['device'].removeprefix('0x')}"}
+    if gpu["driver"] == "nvidia":
+        env.update(__NV_PRIME_RENDER_OFFLOAD="1", __GLX_VENDOR_LIBRARY_NAME="nvidia",
+                   __VK_LAYER_NV_optimus="NVIDIA_only")
+    elif any(g["driver"] == "nvidia" for g in all_gpus):
+        env["__VK_LAYER_NV_optimus"] = "non_NVIDIA_only"
+    return env
+
+
 def app_env(store: Store, app: App, prefix: Prefix, build: wine.WineBuild,
             component_overrides: dict[str, str] | None = None) -> dict[str, str]:
     env = build.env(prefix.path)
+    env.update(gpu_env(app.gpu or prefix.gpu))       # the GPU: its own choice, else its prefix's
     env.update(prefix.env)
 
     # the application's choice, else its prefix's
@@ -733,6 +825,15 @@ def run_app(store: Store, app: App, extra: list[str] = (), watch: bool = True, o
                               cwd)
     elif console:
         cmd = program_in_console(store, str(build.wine), env, exe, args, cwd)
+    elif tools := wrappers(store, app, prefix):
+        if "--" in tools:
+            # gamescope's window goes on the desktop (the Display choice is not for it); Wine
+            # gets gamescope's own X server from it (DISPLAY), as it has no Wayland server for programs
+            for name in ("DISPLAY", "WAYLAND_DISPLAY"):
+                if os.environ.get(name):
+                    env[name] = os.environ[name]
+        cmd = tools + cmd
+        info.append("runs in: " + shlex.join(tools))
     return spawn(cmd, env, cwd, app.id or "app", keep, watch, on_exit, info)
 
 

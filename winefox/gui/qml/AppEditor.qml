@@ -11,8 +11,55 @@ Panel {
     readonly property var buildChoices: [{ name: qsTr("Prefix default"), path: "" }].concat(
         backend.builds.map(b => ({ name: b.name + "  ·  " + b.version, path: b.path })))
 
+    // Wine's debug channels to switch on and off in the custom WINEDEBUG, with what they show
+    readonly property var debugTags: [
+        { tag: "+loaddll", text: qsTr("Which DLLs load, and whether Wine's own (builtin) or the program's (native).") },
+        { tag: "+seh", text: qsTr("Exceptions: crashes and the errors programs catch.") },
+        { tag: "+module", text: qsTr("Loading of modules: where they are looked for and why one is not found.") },
+        { tag: "+file", text: qsTr("Every file opened, created or not found.") },
+        { tag: "+reg", text: qsTr("Every registry key and value read or written.") },
+        { tag: "+process", text: qsTr("Processes and threads started.") },
+        { tag: "+d3d", text: qsTr("Wine's own Direct3D (not DXVK's).") },
+        { tag: "+vulkan", text: qsTr("Vulkan calls through Wine.") },
+        { tag: "+wgl", text: qsTr("OpenGL: pixel formats and contexts.") },
+        { tag: "+win", text: qsTr("Windows: created, moved, shown and hidden.") },
+        { tag: "+cursor", text: qsTr("The mouse pointer: its position and shape.") },
+        { tag: "+keyboard", text: qsTr("Keys and keyboard layouts.") },
+        { tag: "+dinput", text: qsTr("DirectInput: game controllers and raw input.") },
+        { tag: "+xinput", text: qsTr("XInput: gamepads.") },
+        { tag: "+x11drv", text: qsTr("Wine's X11 driver: windows and input under X11.") },
+        { tag: "+waylanddrv", text: qsTr("Wine's Wayland driver: windows and input under Wayland.") },
+        { tag: "+winsock", text: qsTr("Network sockets.") },
+        { tag: "+relay", text: qsTr("Every call between DLLs: very slow, a huge log. Only for a short run.") },
+        { tag: "+timestamp", text: qsTr("The time at the start of each line.") },
+        { tag: "+pid", text: qsTr("The process id at the start of each line.") },
+        { tag: "-all", text: qsTr("Everything else off: only the channels chosen here.") },
+        { tag: "fixme-all", text: qsTr("No fixme lines (what Wine does not do yet).") }
+    ]
+    property var debugOn: []        // the tags of debugTags switched on
+    function loadDebug(value) {
+        var known = debugTags.map(t => t.tag), on = [], other = []
+        value.split(",").map(t => t.trim()).filter(t => t).forEach(t => (known.indexOf(t) >= 0 ? on : other).push(t))
+        debugOn = on
+        winedebug.text = other.join(",")
+    }
+    function toggleDebug(tag) {
+        var on = debugOn.slice(), i = on.indexOf(tag)
+        if (i >= 0) on.splice(i, 1)
+        else on.push(tag)
+        debugOn = on
+    }
+    // in the list's order, then the field's
+    function debugValue() {
+        return debugTags.map(t => t.tag).filter(t => debugOn.indexOf(t) >= 0)
+            .concat(winedebug.text.split(",").map(t => t.trim()).filter(t => t)).join(",")
+    }
+
     // a: the app to edit, or null for a new one in the prefix with id prefixId
     // "" follows Settings, "none" is Wine's own Direct3D, "latest" the newest installed
+    // gamescope, MangoHud, GameMode: the prefix's choice, or on, off
+    readonly property var followChoices: [{ id: "", name: qsTr("As in the prefix") }, { id: "on", name: qsTr("On") },
+                                          { id: "off", name: qsTr("Off") }]
     function componentChoices(kind) {
         var setting = backend.settings["default_" + kind] || "latest"
         var now = setting === "none" ? "none" : (backend.resolveComponent(kind, setting) || qsTr("none installed"))
@@ -35,16 +82,23 @@ Panel {
         audio.select(a ? a.audio : "auto")
         sync.select(a ? a.sync : "auto")
         debug.select(a ? a.debug : "errors")
-        winedebug.text = a ? a.winedebug : ""
+        loadDebug(a ? a.winedebug : "")
         overrides.text = a ? a.dll_overrides.split(";").map(o => o.trim()).filter(o => o).join("\n") : ""
         env.text = a ? a.env : ""
         output.select(a ? a.log_output : "default")
         icon.text = a ? a.icon : ""
+        cover.text = a ? (a.cover || "") : ""
         desktopEntry.checked = a ? a.desktop : false
         autostart.checked = a ? a.autostart : false
         autostartMinimized.checked = a ? a.autostart_minimized : false
+        inSteam.checked = a && backend.hasSteam ? backend.inSteam(a.id) : false
         decorations.select(a ? (a.decorations || "auto") : "auto")
         colors.select(a ? (a.wine_colors || "") : "")
+        scope.select(a ? (a.gamescope || "") : "")
+        mangohud.select(a ? (a.mangohud || "") : "")
+        gamemode.select(a ? (a.gamemode || "") : "")
+        gpu.select(a ? (a.gpu || "") : "")
+        scopeArgs.text = a ? (a.gamescope_args || "") : ""
         terminal.select(a ? (a.terminal || "") : "")
         dxvk.select(a ? a.dxvk : "")
         vkd3d.select(a ? a.vkd3d : "")
@@ -61,11 +115,13 @@ Panel {
         return {
             id: app ? app.id : "", name: name.text, prefix: prefix.value(), exe: exe.text,
             args: args.text, workdir: workdir.text, build: build.value(), display: display.value(),
-            audio: audio.value(), sync: sync.value(), debug: debug.value(), winedebug: winedebug.text,
+            audio: audio.value(), sync: sync.value(), debug: debug.value(), winedebug: editor.debugValue(),
             dll_overrides: overrides.text.split(/[;\n]/).map(o => o.trim()).filter(o => o).join(";"), env: env.text, log_output: output.value(),
             dxvk: dxvk.value(), vkd3d: vkd3d.value(), nvapi: nvapi.value(), icon: icon.text,
-            desktop: desktopEntry.checked, decorations: decorations.value(), terminal: terminal.value(),
+            desktop: desktopEntry.checked, decorations: decorations.value(), terminal: terminal.value(), cover: cover.text,
             wm_class: wmClass.text, wine_colors: colors.value(), autostart: autostart.checked,
+            gamescope: scope.value(), gamescope_args: scopeArgs.text, mangohud: mangohud.value(),
+            gamemode: gamemode.value(), gpu: gpu.value(),
             autostart_minimized: autostart.checked && autostartMinimized.checked
         }
     }
@@ -96,9 +152,31 @@ Panel {
         FoxButton { text: qsTr("Choose…"); onClicked: iconPicker.openPicker() }
     }
     FormRow {
+        label: qsTr("Cover")
+        hint: qsTr("An image for the grid of covers, tall (2:3, like Steam's 600x900). Empty: the icon.")
+        FoxField { id: cover; Layout.fillWidth: true; monospace: true; placeholderText: qsTr("the icon") }
+        FoxButton { text: qsTr("Choose…"); onClicked: coverDialog.open() }
+        FileDialog {
+            id: coverDialog
+            title: qsTr("A cover image")
+            nameFilters: [qsTr("Images (*.png *.jpg *.jpeg *.webp)")]
+            onAccepted: cover.text = backend.localPath(selectedFile.toString())
+        }
+    }
+    FormRow {
         label: qsTr("Desktop")
         hint: qsTr("Adds it to the applications menu. Files opened with it there reach the program as Windows paths.")
         FoxSwitch { id: desktopEntry; text: qsTr("Show in the applications menu") }
+    }
+    FormRow {
+        label: "Steam"
+        visible: backend.hasSteam && editor.app !== null
+        hint: qsTr("A non-Steam game in Steam's library (Big Picture, the Steam Deck's game mode), started by Wine Fox. Quit Steam first: it writes its list when it quits.")
+        FoxSwitch {
+            id: inSteam
+            text: qsTr("In Steam's library")
+            onToggled: if (!backend.setInSteam(editor.app.id, checked)) checked = !checked
+        }
     }
     FormRow {
         label: qsTr("At login")
@@ -171,6 +249,19 @@ Panel {
             FoxCombo { id: nvapi; Layout.fillWidth: true; model: editor.componentChoices("nvapi"); textRole: "name"; valueRole: "version" }
         }
     }
+    FormRow {
+        label: qsTr("Gamescope")
+        hint: (backend.hasGamescope ? "" : qsTr("Not installed: the program runs without it. ")) +
+              qsTr("Runs it in Valve's gamescope: its own resolution, scaling (FSR), frame limit, HDR. Options as for gamescope, e.g. -W 2560 -H 1440 -f; empty: as in the prefix. Wine then uses X11.")
+        FoxCombo {
+            id: scope
+            Layout.preferredWidth: 200
+            textRole: "name"
+            valueRole: "id"
+            model: editor.followChoices
+        }
+        FoxField { id: scopeArgs; Layout.fillWidth: true; monospace: true; placeholderText: qsTr("options") }
+    }
     GridLayout {
         Layout.fillWidth: true
         columns: 2
@@ -200,6 +291,29 @@ Panel {
                 placeholderText: exe.text.replace(/\\/g, "/").split("/").pop().toLowerCase()
             }
         }
+        FormRow {
+            label: "MangoHud"
+            hint: backend.gameTools.mangohud ? qsTr("An overlay with FPS, frame times and load.")
+                                             : qsTr("Not installed: the program runs without it.")
+            FoxCombo { id: mangohud; Layout.fillWidth: true; textRole: "name"; valueRole: "id"; model: editor.followChoices }
+        }
+        FormRow {
+            label: "GameMode"
+            hint: backend.gameTools.gamemode ? qsTr("Feral's GameMode: the CPU governor and priorities for games while it runs.")
+                                             : qsTr("Not installed: the program runs without it.")
+            FoxCombo { id: gamemode; Layout.fillWidth: true; textRole: "name"; valueRole: "id"; model: editor.followChoices }
+        }
+        FormRow {
+            label: qsTr("GPU")
+            hint: backend.gpus.length > 1 ? "" : qsTr("One GPU in this computer.")
+            FoxCombo {
+                id: gpu
+                Layout.fillWidth: true
+                textRole: "name"
+                valueRole: "id"
+                model: [{ id: "", name: qsTr("As in the prefix") }].concat(backend.gpus)
+            }
+        }
         FormRow { label: qsTr("Audio"); FoxCombo { id: audio; Layout.fillWidth: true; model: backend.choices.audio } }
         FormRow { label: qsTr("Sync"); FoxCombo { id: sync; Layout.fillWidth: true; model: backend.choices.sync } }
         FormRow { label: qsTr("Wine debug output"); FoxCombo { id: debug; Layout.fillWidth: true; model: backend.choices.debug } }
@@ -224,8 +338,34 @@ Panel {
     }
     FormRow {
         label: "WINEDEBUG"
+        hint: qsTr("Point at a channel for what it shows. The ones not in the list go in the field, separated by commas.")
         visible: debug.currentText === "custom"
-        FoxField { id: winedebug; Layout.fillWidth: true; monospace: true; placeholderText: "+loaddll,+seh,-all" }
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Flow {
+                Layout.fillWidth: true
+                spacing: 6
+                Repeater {
+                    model: editor.debugTags
+                    FoxButton {
+                        required property var modelData
+                        readonly property bool on: editor.debugOn.indexOf(modelData.tag) >= 0
+                        text: modelData.tag
+                        kind: on ? "primary" : "normal"
+                        font.family: Theme.mono
+                        checkable: false
+                        Accessible.checkable: true
+                        Accessible.checked: on
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 400
+                        ToolTip.text: modelData.text
+                        onClicked: editor.toggleDebug(modelData.tag)
+                    }
+                }
+            }
+            FoxField { id: winedebug; Layout.fillWidth: true; monospace: true; placeholderText: qsTr("other channels, e.g. +tid,+heap") }
+        }
     }
     FormRow {
         label: qsTr("DLL overrides")

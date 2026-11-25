@@ -6,7 +6,7 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QtMsgType, QTimer, qInstallMessageHandler
+from PySide6.QtCore import Qt, QtMsgType, QTimer, qInstallMessageHandler
 from PySide6.QtGui import QIcon, QWindow
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtQml import QQmlApplicationEngine
@@ -143,6 +143,35 @@ def show_window(window, token: str = "") -> None:
     window.requestActivate()
 
 
+def _keep_size(store: Store, window) -> None:
+    """The main window at the size it had when last closed, maximized (or full screen) again if it
+    was; its place is always the desktop's choice. Kept in Settings when it closes or Wine Fox quits."""
+    s = store.settings
+    if s.window_width >= window.minimumWidth() and s.window_height >= window.minimumHeight():
+        window.resize(s.window_width, s.window_height)
+    if s.window_maximized:
+        window.setWindowStates(Qt.WindowMaximized)
+    normal = [window.width(), window.height()]
+
+    def track(*_):
+        # maximized, the window has the screen's size: the size to keep is the one before
+        if not window.windowStates() & (Qt.WindowMaximized | Qt.WindowFullScreen | Qt.WindowMinimized):
+            normal[:] = [window.width(), window.height()]
+
+    def save(*_):
+        states = window.windowStates()
+        if (normal[0], normal[1], bool(states & (Qt.WindowMaximized | Qt.WindowFullScreen))) ==                 (s.window_width, s.window_height, s.window_maximized):
+            return
+        s.window_width, s.window_height = normal
+        s.window_maximized = bool(states & (Qt.WindowMaximized | Qt.WindowFullScreen))
+        store.save_settings()
+
+    window.widthChanged.connect(track)
+    window.heightChanged.connect(track)
+    window.closing.connect(save)
+    QApplication.instance().aboutToQuit.connect(save)
+
+
 def _instance_name() -> str:
     return f"winefox-{os.getuid()}"
 
@@ -253,6 +282,8 @@ def run_gui(store: Store, open_file: str | None = None, in_tray: bool = False) -
     translator = i18n.make_translator()
     app.installTranslator(translator)
     backend = Backend(store)
+    # the time of applications still running when Wine Fox quits
+    app.aboutToQuit.connect(backend.count_all)
     backend.trayAvailable = backend_tray
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("backend", backend)
@@ -267,8 +298,10 @@ def run_gui(store: Store, open_file: str | None = None, in_tray: bool = False) -
         return 1
     root = engine.rootObjects()[0]
     tray = Tray(app, root, backend, QIcon(str(icon))) if not open_file else None
-    if in_tray and tray and backend_tray:
-        root.hide()                          # started at login: only the tray icon
+    if not open_file:
+        _keep_size(store, root)
+        if not (in_tray and tray and backend_tray):    # started at login: only the tray icon
+            root.show()
     server = _listen(root) if not open_file else None
     if os.environ.get("WINEFOX_SCREENSHOTS"):
         _screenshots(root, os.environ["WINEFOX_SCREENSHOTS"], app)

@@ -21,10 +21,12 @@ def _theme(bg, sidebar, panel, raised, hover, border, text, dim, faint, accent, 
 
 
 THEMES: dict[str, dict[str, str]] = {
-    "Fox Dark": _theme("#0f1115", "#0b0d10", "#15181e", "#1b1f27", "#222733", "#262b36", "#e7e9ee", "#8d95a3",
-                       "#5a6170", "#ff7a3d", "#ff925f", "#16110e", "#ef5b5b", "#4cc38a"),
-    "Fox Light": _theme("#f4f5f8", "#e9ebf0", "#ffffff", "#f0f2f6", "#e6e9ef", "#d9dde5", "#1d2129", "#5b6372",
-                        "#8a91a0", "#e8662a", "#f07a43", "#ffffff", "#d64545", "#2f9e6a"),
+    # the base pair, Fox Git's "Fox" palette (graphite, accent #f0803c): hover and border are its
+    # text over the background at 5% and 14%, the accent's text the one that stands out more on it
+    "Fox Dark": _theme("#141415", "#0f0f10", "#19191b", "#232325", "#2d2d2f", "#323233", "#ededed", "#a1a1a6",
+                       "#85858b", "#f0803c", "#f28f53", "#141415", "#e5484d", "#4cc38a"),
+    "Fox Light": _theme("#fafafa", "#f4f4f5", "#ffffff", "#ececee", "#e1e1e3", "#dadada", "#171717", "#525252",
+                        "#737373", "#f0803c", "#d87336", "#141415", "#dc2626", "#16a34a"),
     "Breeze Dark": _theme("#202326", "#1b1e20", "#292c30", "#31363b", "#3b4045", "#43494f", "#fcfcfc", "#a1a9b1",
                           "#7a8087", "#3daee9", "#5cbcf0", "#ffffff", "#da4453", "#27ae60"),
     "Nord": _theme("#2e3440", "#272c36", "#3b4252", "#434c5e", "#4c566a", "#4c566a", "#eceff4", "#a3abba",

@@ -4,7 +4,9 @@ import QtQuick.Controls.Basic
 // Wine Fox's own window frame, when "Use the system window frame" is off: a strip at the top to
 // move the window by (double click: maximize), the minimize, maximize and close buttons where
 // the desktop puts them, the edges to resize by, a 1 px border. The window's content starts
-// below `height` (0 with the system frame). The window sets its flags from `own`.
+// below `barHeight` (0 with the system frame). The window sets its flags from `own`.
+// `inline`: no strip; the buttons are in the window's own top row (WindowButtons in the page
+// header), which moves the window too (main window).
 Item {
     id: frame
     required property var window
@@ -13,7 +15,8 @@ Item {
     property color leftColor: Theme.bg      // the strip over the sidebar, in its colour
     property int leftWidth: 0
     property bool resizable: true
-    readonly property int barHeight: own ? 34 : 0
+    property bool inline: false
+    readonly property int barHeight: own && !inline ? 34 : 0
     readonly property int windowFlags: own ? Qt.Window | Qt.FramelessWindowHint : Qt.Window
 
     anchors.fill: parent
@@ -22,7 +25,7 @@ Item {
     // ---- the strip
     Item {
         id: bar
-        visible: frame.own
+        visible: frame.barHeight > 0
         width: parent.width
         height: frame.barHeight
         Rectangle { width: frame.leftWidth; height: parent.height; color: frame.leftColor }
@@ -32,17 +35,15 @@ Item {
             onPressed: frame.window.startSystemMove()
             onDoubleClicked: frame.toggleMaximized()
         }
-        Row {
+        WindowButtons {
+            target: frame; side: "left"
             anchors.left: parent.left; anchors.leftMargin: 6
             anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
-            Repeater { model: backend.windowButtons.left; delegate: button }
         }
-        Row {
+        WindowButtons {
+            target: frame; side: "right"
             anchors.right: parent.right; anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
-            Repeater { model: backend.windowButtons.right; delegate: button }
         }
     }
 
@@ -50,55 +51,6 @@ Item {
         if (!resizable) return
         if (maximized) window.showNormal()
         else window.showMaximized()
-    }
-
-    Component {
-        id: button
-        Rectangle {
-            id: b
-            required property string modelData
-            visible: modelData !== "maximize" || frame.resizable
-            width: 40; height: 26; radius: 6
-            color: !area.containsMouse ? "transparent" : modelData === "close" ? Theme.danger : Theme.hover
-            readonly property color ink: area.containsMouse && modelData === "close" ? "white" : Theme.dim
-            // the glyphs drawn, not from a font
-            Rectangle {                                          // minimize: a line
-                visible: b.modelData === "minimize"
-                anchors.centerIn: parent; width: 10; height: 1.5; color: b.ink
-            }
-            Rectangle {                                          // maximize: a square; restore: two
-                visible: b.modelData === "maximize"
-                anchors.centerIn: parent
-                anchors.horizontalCenterOffset: frame.maximized ? -1 : 0
-                anchors.verticalCenterOffset: frame.maximized ? 1 : 0
-                width: frame.maximized ? 8 : 10; height: width
-                color: "transparent"; border.color: b.ink; border.width: 1.5; radius: 1
-                Rectangle {
-                    visible: frame.maximized
-                    x: 3; y: -3; z: -1; width: 8; height: 8
-                    color: "transparent"; border.color: b.ink; border.width: 1.5; radius: 1
-                }
-            }
-            Repeater {                                           // close: a cross
-                model: b.modelData === "close" ? [45, -45] : []
-                Rectangle {
-                    required property int modelData
-                    anchors.centerIn: parent; width: 13; height: 1.5; color: b.ink
-                    rotation: modelData; antialiasing: true
-                }
-            }
-            MouseArea {
-                id: area
-                anchors.fill: parent
-                hoverEnabled: true
-                onClicked: b.modelData === "close" ? frame.window.close()
-                         : b.modelData === "minimize" ? frame.window.showMinimized() : frame.toggleMaximized()
-            }
-            ToolTip.visible: area.containsMouse
-            ToolTip.delay: 600
-            ToolTip.text: b.modelData === "close" ? qsTr("Close") : b.modelData === "minimize" ? qsTr("Minimize")
-                        : frame.maximized ? qsTr("Restore down") : qsTr("Maximize")
-        }
     }
 
     // ---- the border and the edges to resize by

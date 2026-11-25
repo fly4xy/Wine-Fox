@@ -29,4 +29,6 @@ RowLayout {
         }
     }
     RowLayout { id: actionRow; spacing: 8 }
+    // the window's buttons, with Wine Fox's own frame (WindowFrame.inline)
+    WindowButtons { side: "right"; visible: Theme.frame !== null && Theme.frame.own && Theme.frame.inline }
 }

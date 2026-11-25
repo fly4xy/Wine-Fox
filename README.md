@@ -52,6 +52,20 @@ Only one Wine Fox runs at a time: starting it again shows the window that is alr
   them), create new ones, add programs from a prefix's *Add or remove programs* or pick an
   `.exe`. Every application has its own Wine build, DXVK / VKD3D-Proton / DXVK-NVAPI versions,
   DLL overrides, environment, sync mode, debug output, window frame and terminal.
+- **Gamescope.** Applications can run inside Valve's gamescope (its own resolution, FSR
+  scaling, frame limit, HDR), with its options: on in Settings for all, or per prefix, or per
+  application. Off by default; without gamescope installed they run as usual. MangoHud (FPS
+  overlay) and GameMode the same way.
+- **GPU.** With more than one GPU, a prefix or an application can run on the one chosen (Mesa's
+  PRIME and device selection, NVIDIA's render offload: OpenGL, Vulkan, DXVK and VKD3D follow it).
+- **Games.** The time spent in each application; a grid of covers instead of the list (any image,
+  Steam's own for games imported from it); applications in Steam's library as non-Steam games
+  (Big Picture, the Steam Deck's game mode).
+- **Prefix check.** What keeps a prefix from working well (applications whose executable is gone,
+  drives whose folder is gone, DLLs linked to removed files, Edge Update keeping it running,
+  another Wine version, no core fonts or Visual C++), each with its fix, or all at once.
+- **Save and restore a prefix** with its applications in one archive (zstd or gzip): a backup, or
+  to move it to another computer.
 - **Running.** A second click on a running application shows its window instead of starting a
   copy (a click on its row asks first). *Stop* asks its windows to close, as their close button
   does. Pinned applications come first in their prefix and under *Pinned* in All applications.
@@ -100,7 +114,9 @@ Only one Wine Fox runs at a time: starting it again shows the window that is alr
   telemetry off; winetricks verbs.
 - **Desktop integration:** applications in the menu (with their icon and window class), Wine Fox
   in the menu, the tray, file handlers, Wine Fox's colours in Wine's windows and menus.
-- **Lutris import** of games and programs with their settings.
+- **Import** from Lutris (games and programs with their settings), Heroic (Epic, GOG, added by
+  hand), Bottles (each bottle a prefix, with its programs) and Steam (Proton's prefixes; the
+  executable is a guess).
 - **Scrolling** at the desktop's speed, or faster (Settings).
 - **English or Russian**, as the system is set or chosen in Settings.
 - **AutoSDK for Unreal Engine** (Wine & components): MSVC and the Windows SDK downloaded from

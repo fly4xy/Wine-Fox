@@ -15,7 +15,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, QFileSystemWatcher, QObject, QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QGuiApplication, QImage, QPalette
 
-from .. import __version__, autosdk, components, i18n, config, desktop, discover, icons, ide, launch, winefx, log as wflog, lutris, patches, paths, recipes, servers, registry, themes, unreal, updates, usage, users, wine, wineconf
+from .. import __version__, autosdk, backup, components, launchers, steam, i18n, config, desktop, discover, health, icons, ide, launch, winefx, log as wflog, lutris, patches, paths, recipes, servers, registry, themes, unreal, updates, usage, users, wine, wineconf
 from ..config import App, Prefix, Store
 from ..i18n import tr
 
@@ -238,6 +238,7 @@ class Backend(QObject):
         # the apps list is read by several bindings at once: built once per change
         self._apps: list[dict] | None = None
         self._running_ids: set[str] = set()     # apps whose executable runs, per process change
+        self._running_since: dict[str, float] = {}   # app id -> when it was first seen running
         self._display_ok: set[str] = set()      # apps to start whatever their prefix's display
         self._had_app: set[str] = set()          # prefixes where an application of ours ran
         self._idle_since: dict[str, float] = {}  # such a prefix -> since when it only has leftovers
@@ -317,9 +318,13 @@ class Backend(QObject):
         if self._apps is not None:
             return self._apps
         items = []
+        used = usage.load()
         for a in self.store.apps.values():
             prefix = self.store.prefixes.get(a.prefix)
             d = asdict(a)
+            d.update(playTime=float(used.get(a.id, {}).get("time", 0)), lastRun=float(used.get(a.id, {}).get("last", 0)),
+                     coverUrl=QUrl.fromLocalFile(str(paths.expand(a.cover))).toString()
+                     if a.cover and paths.expand(a.cover).is_file() else "")
             d.update(iconUrl=self._icon_url(a, prefix),
                      prefixName=prefix.name if prefix else tr("missing prefix '%1'").replace("%1", a.prefix),
                      env=_env_text(a.env),
@@ -432,6 +437,21 @@ class Backend(QObject):
 
 
     @Property(bool, constant=True)
+    def hasGamescope(self):
+        return shutil.which("gamescope") is not None
+
+    @Property("QVariantList", constant=True)
+    def gpus(self):
+        """The GPUs: id (PCI slot) and name."""
+        return [{"id": g["id"], "name": g["name"]} for g in launch.gpus()]
+
+    @Property("QVariantMap", constant=True)
+    def gameTools(self):
+        """Which of MangoHud and GameMode are installed."""
+        return {"mangohud": shutil.which("mangohud") is not None,
+                "gamemode": shutil.which("gamemoderun") is not None}
+
+    @Property(bool, constant=True)
     def hasTray(self):
         return bool(self.trayAvailable)
 
@@ -491,7 +511,7 @@ class Backend(QObject):
         app = self.store.apps.get(data.get("id", "")) or App()
         for key in ("name", "prefix", "exe", "args", "workdir", "build", "display", "audio", "sync",
                     "debug", "winedebug", "dll_overrides", "icon", "log_output", "dxvk", "vkd3d", "nvapi",
-                    "decorations", "terminal", "wm_class", "wine_colors"):
+                    "decorations", "terminal", "wm_class", "wine_colors", "gamescope", "gamescope_args", "mangohud", "gamemode", "cover", "gpu"):
             if key in data:
                 setattr(app, key, str(data[key] or ""))
         if "env" in data:
@@ -772,23 +792,34 @@ class Backend(QObject):
     def verbGroups(self):
         return [tr(g) for g in recipes.GROUP_ORDER]
 
-    @Slot()
-    def loadLutris(self):
-        """Lutris's Wine games for the import panel (lutrisLoaded)."""
-        self._background(tr("Reading Lutris"), lambda: lutris.preview(self.store), lambda items: self.lutrisLoaded.emit(items))
+    @staticmethod
+    def _launcher_name(source: str) -> str:
+        return "Lutris" if source == "lutris" else launchers.NAMES.get(source, source)
 
-    @Slot("QVariantList")
-    def importLutris(self, files):
+    @Slot(str)
+    def loadLauncher(self, source):
+        """Another launcher's games for the import panel (lutrisLoaded): lutris, heroic, bottles, steam."""
+        read = (lambda: lutris.preview(self.store)) if source == "lutris" else \
+            (lambda: launchers.preview(self.store, source))
+        self._background(tr("Reading %1").replace("%1", self._launcher_name(source)), read,
+                         lambda items: self.lutrisLoaded.emit(items))
+
+    @Slot(str, "QVariantList")
+    def importLauncher(self, source, files):
+        name = self._launcher_name(source)
+
         def done(result):
             added, skipped = result
             if added:
-                self.message.emit("info", tr("Imported from Lutris: %1").replace("%1", ", ".join(added)))
+                self.message.emit("info", tr("Imported from %2: %1").replace("%1", ", ".join(added)).replace("%2", name))
             if skipped:
-                self.launchFailed.emit("", "Lutris", tr("import: %n not imported", n=len(skipped)), "\n".join(skipped), "")
+                self.launchFailed.emit("", name, tr("import: %n not imported", n=len(skipped)), "\n".join(skipped), "")
             self.prefixesChanged.emit()
             self._apps_changed()
         wanted = {str(f) for f in files}
-        self._background(tr("Importing from Lutris"), lambda: lutris.import_games(self.store, wanted), done)
+        work = (lambda: lutris.import_games(self.store, wanted)) if source == "lutris" else \
+            (lambda: launchers.import_games(self.store, source, wanted))
+        self._background(tr("Importing from %1").replace("%1", name), work, done)
 
     # ---------------------------------------------------------------- appearance
 
@@ -1133,7 +1164,8 @@ class Backend(QObject):
     def savePrefix(self, data):
         data = dict(data)
         prefix = self.store.prefixes.get(data.get("id", "")) or Prefix()
-        for key in ("name", "path", "build", "arch", "display", "users_mode", "users_shared"):
+        for key in ("name", "path", "build", "arch", "display", "users_mode", "users_shared", "gamescope",
+                    "gamescope_args", "mangohud", "gamemode", "gpu"):
             if key in data:
                 setattr(prefix, key, str(data[key] or ""))
         if "env" in data:
@@ -1152,6 +1184,16 @@ class Backend(QObject):
         self.prefixesChanged.emit()
         self._apps_changed()
         return prefix.id
+
+    @Slot(str, str)
+    def setAppsView(self, prefix_id, view):
+        """list or grid: of the prefix's applications, of all of them with no prefix id."""
+        if not prefix_id:
+            self.saveSettings({"apps_view": view})
+        elif prefix := self.store.prefixes.get(prefix_id):
+            prefix.apps_view = view
+            self.store.save_prefix(prefix)
+            self.prefixesChanged.emit()
 
     @Slot(str)
     def initPrefix(self, prefix_id):
@@ -1254,6 +1296,101 @@ class Backend(QObject):
         return [{"id": t, "name": tr(names.get(t, t)) + ("" if t in mine or t.startswith("cmd") else f"  ({t})"),
                  "own": t in mine} for t in launch.TOOLS] \
             + [{"id": "patches", "name": tr("Patches"), "own": True}]       # Wine Fox's only
+
+    # ---------------------------------------------------------------- Steam
+
+    @Property(bool, constant=True)
+    def hasSteam(self):
+        return steam.available()
+
+    @Slot(str, result=bool)
+    def inSteam(self, app_id):
+        app = self.store.apps.get(app_id)
+        return bool(app) and steam.is_added(app)
+
+    @Slot(str, bool, result=bool)
+    def setInSteam(self, app_id, on):
+        """Add the application to Steam's library as a non-Steam game, or take it out; False when
+        Steam runs (it would write its list over it)."""
+        app = self.store.apps.get(app_id)
+        if not app:
+            return False
+        try:
+            if on:
+                prefix = self.store.prefixes.get(app.prefix)
+                exe = launch.to_unix(paths.expand(prefix.path), app.exe) if prefix and app.exe else None
+                steam.add(app, icons.resolve(app.icon, exe))
+                self.message.emit("info", tr("%1 is in Steam's library from its next start").replace("%1", app.name))
+            else:
+                steam.remove(app)
+            return True
+        except (steam.SteamError, OSError) as e:
+            self.message.emit("error", str(e))
+            return False
+
+    # ---------------------------------------------------------------- backup
+
+    @Slot(str, result=str)
+    def backupName(self, prefix_id):
+        prefix = self.store.prefixes.get(prefix_id)
+        return backup.suggested_name(prefix) if prefix else ""
+
+    @Slot(str, str)
+    def backupPrefix(self, prefix_id, file):
+        """The prefix and its applications into one archive (stopped first: it is read whole)."""
+        prefix = self.store.prefixes.get(prefix_id)
+        if not prefix:
+            return
+        if any(g.prefix == self._prefix_path(prefix) for g in self._groups):
+            self.message.emit("error", tr("%1 is running: stop it first, a running prefix changes while it is saved")
+                              .replace("%1", prefix.name))
+            return
+        self._background(tr("Saving %1").replace("%1", prefix.name),
+                         lambda: backup.export(self.store, prefix, Path(file)),
+                         lambda path: self.message.emit("info", tr("%1 saved to %2").replace("%1", prefix.name)
+                                                        .replace("%2", str(path))))
+
+    @Slot(str)
+    def restorePrefix(self, file):
+        """A new prefix, with its applications, from an archive made by backupPrefix."""
+        def done(result):
+            prefix, apps = result
+            self.message.emit("info", tr("%1 restored with %n application(s)", len(apps)).replace("%1", prefix.name))
+            self._apps_changed()
+            self.prefixesChanged.emit()
+        try:
+            backup.read_manifest(Path(file))
+        except backup.BackupError as e:
+            self.message.emit("error", str(e))
+            return
+        self._background(tr("Restoring %1").replace("%1", Path(file).name),
+                         lambda: backup.restore(self.store, Path(file)), done)
+
+    # ---------------------------------------------------------------- health check
+
+    healthLoaded = Signal(str, "QVariantList")      # prefix id, issues
+
+    @Slot(str)
+    def checkHealth(self, prefix_id):
+        """What keeps the prefix from working well (healthLoaded)."""
+        prefix = self.store.prefixes.get(prefix_id)
+        if prefix:
+            self._background(tr("Checking %1").replace("%1", prefix.name),
+                             lambda: [vars(i) for i in health.check(self.store, prefix)],
+                             lambda issues: self.healthLoaded.emit(prefix_id, issues))
+
+    @Slot(str, "QVariantList")
+    def fixHealth(self, prefix_id, ids):
+        """Fix these issues, then check again."""
+        prefix = self.store.prefixes.get(prefix_id)
+        ids = [str(i) for i in ids]
+        if not prefix or not ids:
+            return
+
+        def done(errors):
+            self._task_done(prefix, tr("Fixes"), "\n".join(errors))
+            self.checkHealth(prefix_id)
+        self._background(tr("Fixing %1").replace("%1", prefix.name), lambda: health.fix(self.store, prefix, ids), done)
 
     @Slot(str, result="QVariantMap")
     def wineConfig(self, prefix_id):
@@ -1608,10 +1745,23 @@ class Backend(QObject):
             self._groups_key = key
             running = self._find_running()
             if running != self._running_ids:
+                self._count_time(running)
                 self._running_ids = running
                 self._apps_changed()
             self.prefixesChanged.emit()
         self._stop_idle_prefixes(groups)
+
+    def _count_time(self, running: set[str]) -> None:
+        """The time in each application: from when its executable is seen running until it is not
+        (started from Wine Fox or not); also when Wine Fox quits (count_all)."""
+        now = time.time()
+        for app_id in running - set(self._running_since):
+            self._running_since[app_id] = now
+        for app_id in set(self._running_since) - running:
+            usage.add_time(app_id, now - self._running_since.pop(app_id))
+
+    def count_all(self) -> None:
+        self._count_time(set())
 
     def _stop_idle_prefixes(self, groups: list[servers.PrefixGroup]):
         """Stop a prefix where an application started by Wine Fox ran, once that ended and only
@@ -1725,11 +1875,13 @@ class Backend(QObject):
         if "wine_dirs" in data:
             s.wine_dirs = [str(d) for d in data["wine_dirs"] if str(d).strip()]
         for key in ("prefixes_dir", "default_build", "default_dxvk", "default_vkd3d", "default_nvapi",
-                    "default_prefix", "terminal", "console", "terminal_app", "code_editor"):
+                    "default_prefix", "terminal", "console", "terminal_app", "code_editor", "gamescope_args",
+                    "apps_view"):
             if key in data:
                 setattr(s, key, str(data[key] or ""))
         for key in ("debug_logging", "system_frame", "log_wine_output", "close_to_tray", "wine_colors", "fox_tools",
-                    "start_at_login", "start_in_tray", "linux_file_manager", "check_updates"):
+                    "start_at_login", "start_in_tray", "linux_file_manager", "check_updates", "gamescope", "mangohud",
+                    "gamemode"):
             if key in data:
                 setattr(s, key, bool(data[key]))
         if "tray_apps" in data:

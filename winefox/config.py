@@ -66,6 +66,15 @@ class Settings:
     fox_tools: bool = True                             # Wine Fox windows for winecfg, the uninstaller...
     wine_colors: bool = False                          # Wine's own windows and menus in the theme's colours
     check_updates: bool = True                         # ask the author's site for a new Wine Fox at start
+    gamescope: bool = False                            # applications run inside gamescope
+    gamescope_args: str = ""                           # its options, shell-like (-W 2560 -H 1440 -f)
+    mangohud: bool = False                             # MangoHud's overlay (FPS, load) in applications
+    gamemode: bool = False                             # Feral's GameMode while applications run
+    apps_view: str = "list"                            # the applications as a list or a grid of covers
+    # the main window's size at the last close, and whether it was maximized (its place is not kept)
+    window_width: int = 0
+    window_height: int = 0
+    window_maximized: bool = False
     # .uproject -> app id of the engine chosen for it, when its EngineAssociation names none
     project_engines: dict[str, str] = field(default_factory=dict)
 
@@ -79,6 +88,12 @@ class Prefix:
     arch: str = "win64"
     env: dict[str, str] = field(default_factory=dict)
     display: str = "auto"            # DISPLAY_MODES for its applications whose own is "auto"
+    gamescope: str = ""              # on, off; "" = as in Settings (for its applications whose own is "")
+    gamescope_args: str = ""         # "" = as in Settings
+    mangohud: str = ""               # on, off; "" = as in Settings
+    gamemode: str = ""               # on, off; "" = as in Settings
+    gpu: str = ""                    # PCI slot of the GPU its applications use; "" = the system's default
+    apps_view: str = "list"          # its applications as a list or a grid of covers (All: Settings')
     # users/ layout, restored after every operation Wine Fox runs on the prefix
     #   default: whatever Wine creates
     #   shared:  drive_c/users is a symlink to users_shared (a directory or another prefix)
@@ -118,6 +133,12 @@ class App:
     autostart: bool = False          # started when the user logs in (an XDG autostart entry)
     autostart_minimized: bool = False   # then its window is minimized once it shows
     wine_colors: str = ""            # Wine Fox's colours in its windows: on, off; "" = as in Settings
+    gamescope: str = ""              # on, off; "" = as its prefix
+    cover: str = ""                  # an image for the grid of covers (2:3, Steam's 600x900); "" = its icon
+    gamescope_args: str = ""         # "" = as its prefix
+    mangohud: str = ""               # on, off; "" = as its prefix
+    gamemode: str = ""               # on, off; "" = as its prefix
+    gpu: str = ""                    # PCI slot of the GPU (0000:01:00.0); "" = as its prefix
 
 
 def _from_dict(cls, data: dict):

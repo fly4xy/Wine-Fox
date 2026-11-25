@@ -4,22 +4,23 @@ import QtQuick
 // All colours and sizes of the interface. The colours are set from the chosen theme
 // (winefox/themes.py) when the window opens and when the theme changes.
 QtObject {
-    property color bg: "#0f1115"
-    property color sidebar: "#0b0d10"
-    property color panel: "#15181e"
-    property color raised: "#1b1f27"
-    property color hover: "#222733"
-    property color border: "#262b36"
-    property color text: "#e7e9ee"
-    property color dim: "#8d95a3"
-    property color faint: "#5a6170"
-    property color accent: "#ff7a3d"
-    property color accentHover: "#ff925f"
-    property color accentText: "#16110e"
-    property color danger: "#ef5b5b"
+    property color bg: "#141415"
+    property color sidebar: "#0f0f10"
+    property color panel: "#19191b"
+    property color raised: "#232325"
+    property color hover: "#2d2d2f"
+    property color border: "#323233"
+    property color text: "#ededed"
+    property color dim: "#a1a1a6"
+    property color faint: "#85858b"
+    property color accent: "#f0803c"
+    property color accentHover: "#f28f53"
+    property color accentText: "#141415"
+    property color danger: "#e5484d"
     property color ok: "#4cc38a"
 
     property int titleBar: 0          // the height of Wine Fox's own title bar (WindowFrame), 0 with the system frame
+    property var frame: null          // the main window's WindowFrame, for the buttons in its rows (WindowButtons)
 
     readonly property int radius: 8
     readonly property int gap: 12

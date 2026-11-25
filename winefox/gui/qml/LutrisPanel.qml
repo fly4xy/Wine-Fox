@@ -2,22 +2,26 @@ import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
-// Import from Lutris: its Wine games and programs, to pick the ones to add.
+// Import from another launcher (Lutris, Heroic, Bottles, Steam): its Wine games and programs, to
+// pick the ones to add.
 Panel {
     id: panel
+    property string source: "lutris"
+    readonly property string sourceName: ({ lutris: "Lutris", heroic: "Heroic", bottles: "Bottles", steam: "Steam" })[source]
     property var items: []
     property var picked: ({})          // config file -> true
     property bool loading: false
-    title: qsTr("Import from Lutris")
+    title: qsTr("Import from %1").arg(sourceName)
 
     readonly property int pickedCount: Object.keys(picked).filter(k => picked[k]).length
 
-    function openPanel() {
+    function openPanel(from) {
+        source = from || "lutris"
         items = []
         picked = ({})
         loading = true
         open()
-        backend.loadLutris()
+        backend.loadLauncher(source)
     }
     function toggle(file, on) {
         var copy = Object.assign({}, picked)
@@ -38,9 +42,11 @@ Panel {
         wrapMode: Text.WordWrap
         color: Theme.dim
         font.pixelSize: Theme.fontSize
-        text: panel.loading ? qsTr("Reading Lutris…")
-              : panel.items.length ? qsTr("Wine games and programs in Lutris. The executable, arguments, working directory, Wine build, environment, DLL overrides, DXVK/VKD3D and esync/fsync come along; prefixes are added as they are.")
-              : qsTr("No Wine games found in Lutris (~/.local/share/lutris).")
+        text: panel.loading ? qsTr("Reading %1…").arg(panel.sourceName)
+              : !panel.items.length ? qsTr("No Wine games found in %1.").arg(panel.sourceName)
+              : panel.source === "lutris" ? qsTr("Wine games and programs in Lutris. The executable, arguments, working directory, Wine build, environment, DLL overrides, DXVK/VKD3D and esync/fsync come along; prefixes are added as they are.")
+              : panel.source === "steam" ? qsTr("Games Steam runs with Proton: their prefixes, with Proton as the Wine build. Steam does not say which executable starts a game: the one taken is a guess, check it in the application's settings. Games with Steam's DRM still need Steam.")
+              : qsTr("Its games and programs with their prefixes and Wine builds; the prefixes are added as they are.")
     }
 
     Repeater {
@@ -48,7 +54,7 @@ Panel {
         Rectangle {
             id: item
             required property var modelData
-            readonly property bool usable: modelData.status === "new"
+            readonly property bool usable: modelData.status.startsWith("new")
             Layout.fillWidth: true
             implicitHeight: 56
             radius: Theme.radius
@@ -88,6 +94,7 @@ Panel {
                         }
                         Text {
                             text: item.modelData.status === "new" ? item.modelData.wine : qsTr(item.modelData.status)
+                                  + (item.usable && item.modelData.wine ? "  ·  " + item.modelData.wine : "")
                             color: item.modelData.status === "new" ? Theme.faint : Theme.accent
                             font.pixelSize: Theme.smallFont
                             elide: Text.ElideRight
@@ -112,7 +119,7 @@ Panel {
             kind: "primary"
             enabled: panel.pickedCount > 0
             onClicked: {
-                backend.importLutris(Object.keys(panel.picked).filter(k => panel.picked[k]))
+                backend.importLauncher(panel.source, Object.keys(panel.picked).filter(k => panel.picked[k]))
                 panel.close()
             }
         },
@@ -121,7 +128,7 @@ Panel {
             enabled: !panel.loading
             onClicked: {
                 var copy = {}
-                panel.items.forEach(i => { if (i.status === "new") copy[i.file] = true })
+                panel.items.forEach(i => { if (i.status.startsWith("new")) copy[i.file] = true })
                 panel.picked = copy
             }
         },

@@ -9,13 +9,32 @@ ApplicationWindow {
     height: 720
     minimumWidth: 820
     minimumHeight: 520
-    visible: true
+    // shown by app.py, at the size of the last session (_keep_size)
+    visible: false
     title: "Wine Fox"
     color: Theme.bg
     flags: frame.windowFlags
 
-    WindowFrame { id: frame; window: window; leftColor: Theme.sidebar; leftWidth: 230 }
+    // its buttons are in the page header's row (and the sidebar's top row when on the left)
+    WindowFrame { id: frame; window: window; leftColor: Theme.sidebar; leftWidth: 230; inline: true }
     Binding { target: Theme; property: "titleBar"; value: frame.barHeight }
+    Binding { target: Theme; property: "frame"; value: frame }
+    // the search of the applications: of the prefix shown, else of all of them
+    Shortcut {
+        sequences: [StandardKey.Find]
+        onActivated: {
+            if (window.page > 1) window.showPage(0)
+            (window.page === 1 ? prefixApps : allApps).focusSearch()
+        }
+    }
+    // the top rows move the window (double click: maximize), behind what is in them
+    MouseArea {
+        visible: frame.own
+        width: parent.width
+        height: 76
+        onPressed: window.startSystemMove()
+        onDoubleClicked: frame.toggleMaximized()
+    }
 
     // pages: 0 all applications, 1 one prefix, 2 Wine builds, 3 processes, 4 settings
     // the colours of the chosen theme (Settings > Appearance)
@@ -40,7 +59,7 @@ ApplicationWindow {
     property int page: 0
     property string prefixId: ""
 
-    function showPage(i) { page = i; appEditor.close(); prefixEditor.close(); scanPanel.close(); downloadPanel.close(); installPanel.close(); lutrisPanel.close(); wineConfigPanel.close(); uninstallPanel.close(); registryPanel.close(); autosdkPanel.close(); patchPanel.close() }
+    function showPage(i) { page = i; appEditor.close(); prefixEditor.close(); scanPanel.close(); downloadPanel.close(); installPanel.close(); lutrisPanel.close(); wineConfigPanel.close(); uninstallPanel.close(); registryPanel.close(); autosdkPanel.close(); patchPanel.close(); healthPanel.close() }
     function showPrefix(id) { prefixId = id; showPage(1) }
 
     Connections {
@@ -52,7 +71,7 @@ ApplicationWindow {
     }
 
     // development: WINEFOX_SCREENSHOTS walks through these steps
-    readonly property int screenshotSteps: 25
+    readonly property int screenshotSteps: 27
     function screenshotStep(i) {
         var first = backend.prefixes.length ? backend.prefixes[backend.prefixes.length - 1] : null
         if (i === 16 && first) { installPanel.close(); showPrefix(first.id); wineConfigPanel.openFor(first) }
@@ -64,6 +83,8 @@ ApplicationWindow {
         if (i === 22 && first) { autosdkPanel.close(); showPrefix(first.id); patchPanel.openForPrefix(first) }
         if (i === 23) { patchPanel.close(); showPage(4); showUpdate("0.11", true) }
         if (i === 24) { updateDialog.close(); showPage(2); downloadPanel.openFor("wine") }
+        if (i === 25) { lutrisPanel.close(); showPage(0); allApps.gridShot = true }
+        if (i === 26 && first) { allApps.gridShot = false; showPrefix(first.id); healthPanel.openFor(first) }
         if (i === 0) showPage(0)
         if (i === 1 && first) showPrefix(first.id)
         if (i >= 2 && i <= 4) showPage(i)
@@ -104,6 +125,7 @@ ApplicationWindow {
                     Layout.topMargin: 6
                     Layout.leftMargin: 4
                     spacing: 10
+                    WindowButtons { side: "left" }
                     Image { source: "icon.png"; sourceSize: Qt.size(64, 64); width: 32; height: 32; Layout.preferredWidth: 32; Layout.preferredHeight: 32; smooth: true; mipmap: true }
                     Text { text: "Wine Fox"; color: Theme.text; font.pixelSize: 16; font.weight: Font.DemiBold }
                 }
@@ -138,7 +160,11 @@ ApplicationWindow {
                             id: addMenu
                             FoxMenuItem { text: qsTr("New prefix"); hint: qsTr("Create one, or add an existing prefix folder"); onTriggered: prefixEditor.openFor(null) }
                             FoxMenuItem { text: qsTr("Add prefixes from a folder"); hint: qsTr("Every prefix inside a folder you choose"); onTriggered: importDialog.open() }
-                            FoxMenuItem { text: qsTr("Import from Lutris"); hint: qsTr("Its Wine games and programs, with their settings"); onTriggered: lutrisPanel.openPanel() }
+                            FoxMenuItem { text: qsTr("Restore a saved prefix"); hint: qsTr("From an archive made with Save…, with its applications"); onTriggered: restoreDialog.open() }
+                            FoxMenuItem { text: qsTr("Import from Lutris"); hint: qsTr("Its Wine games and programs, with their settings"); onTriggered: lutrisPanel.openPanel("lutris") }
+                            FoxMenuItem { text: qsTr("Import from Heroic"); hint: qsTr("Epic and GOG games, and the ones added to it"); onTriggered: lutrisPanel.openPanel("heroic") }
+                            FoxMenuItem { text: qsTr("Import from Bottles"); hint: qsTr("Each bottle as a prefix, with its programs"); onTriggered: lutrisPanel.openPanel("bottles") }
+                            FoxMenuItem { text: qsTr("Import from Steam"); hint: qsTr("The prefixes of games Steam runs with Proton"); onTriggered: lutrisPanel.openPanel("steam") }
                         }
                     }
                 }
@@ -209,10 +235,12 @@ ApplicationWindow {
             currentIndex: window.page
 
             AppsPage {
+                id: allApps
                 onEditApp: (app) => appEditor.openFor(app, "")
                 onNewApp: (prefixId) => appEditor.openFor(null, prefixId)
             }
             AppsPage {
+                id: prefixApps
                 prefixId: window.prefixId
                 onEditApp: (app) => appEditor.openFor(app, "")
                 onNewApp: (prefixId) => appEditor.openFor(null, prefixId)
@@ -226,6 +254,7 @@ ApplicationWindow {
                     else if (id === "explorer") backend.openPath(backend.driveC(prefix.id))
                     else if (id === "regedit") registryPanel.openFor(prefix)
                     else if (id === "patches") patchPanel.openForPrefix(prefix)
+                    else if (id === "health") healthPanel.openFor(prefix)
                 }
             }
             BuildsPage {
@@ -310,6 +339,14 @@ ApplicationWindow {
     RegistryPanel { id: registryPanel }
     AutosdkPanel { id: autosdkPanel }
     PatchPanel { id: patchPanel }
+    HealthPanel { id: healthPanel }
+
+    FileDialog {
+        id: restoreDialog
+        title: qsTr("A prefix saved by Wine Fox")
+        nameFilters: [qsTr("Prefix archives (*.tar.zst *.tar.gz)"), qsTr("All files (*)")]
+        onAccepted: backend.restorePrefix(backend.localPath(selectedFile.toString()))
+    }
 
     FolderDialog {
         id: importDialog

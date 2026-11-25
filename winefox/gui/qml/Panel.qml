@@ -39,6 +39,8 @@ Drawer {
                 elide: Text.ElideRight
             }
             FoxButton { text: qsTr("Close"); kind: "flat"; onClicked: panel.close() }
+            // it covers the page header's: the window's buttons here too
+            WindowButtons { side: "right"; visible: Theme.frame !== null && Theme.frame.own && Theme.frame.inline }
         }
         ScrollView {
             FastScroll { flickable: scroll.contentItem }

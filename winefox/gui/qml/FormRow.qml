@@ -8,6 +8,8 @@ ColumnLayout {
     property string hint
     default property alias content: holder.data
     Layout.fillWidth: true
+    // side by side in a grid, their labels and controls on one level whatever the hints' heights
+    Layout.alignment: Qt.AlignTop
     spacing: 6
 
     Text {

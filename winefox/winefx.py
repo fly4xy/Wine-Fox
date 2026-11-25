@@ -116,7 +116,17 @@ def undo(dest: Path) -> list[str]:
             target.unlink()
     # the Wine version stays known (a base from elsewhere has no version.txt of ours)
     (dest / STATE).write_text(json.dumps({"wine": state["wine"]}))
+    _refresh_prefixes(dest)
     return list(state.get("files", {}))
+
+
+def _refresh_prefixes(dest: Path) -> None:
+    """Prefixes keep copies of Wine's DLLs in system32 and take new ones only when wine.inf
+    changed: programs that check their DLLs against those files (World of Warcraft) broke the
+    loaded ones with the old copies' bytes. As install.sh does."""
+    inf = dest / "share/wine/wine.inf"
+    if inf.is_file():
+        os.utime(inf)
 
 
 def _apply(dest: Path, overlay: Path) -> dict:
@@ -137,6 +147,7 @@ def _apply(dest: Path, overlay: Path) -> dict:
     state = {"release": manifest["release"], "wine": manifest["wine"], "fx": manifest["fx"], "files": files}
     (dest / STATE).parent.mkdir(parents=True, exist_ok=True)
     (dest / STATE).write_text(_state_text(state))
+    _refresh_prefixes(dest)
     return state
 
 

@@ -19,6 +19,11 @@ Panel {
     readonly property var buildChoices: [{ name: qsTr("Default build (Settings)"), path: "" }].concat(
         backend.builds.map(b => ({ name: b.name + "  ·  " + b.version, path: b.path })))
 
+    // gamescope, MangoHud, GameMode: Settings' choice (shown), or on, off
+    function settingsChoices(key) {
+        return [{ id: "", name: backend.settings[key] ? qsTr("As in Settings (on)") : qsTr("As in Settings (off)") },
+                { id: "on", name: qsTr("On") }, { id: "off", name: qsTr("Off") }]
+    }
     function openFor(p) {
         prefix = p
         name.text = p ? p.name : ""
@@ -26,6 +31,11 @@ Panel {
         build.select(p ? p.build : "")
         arch.select(p ? p.arch : "win64")
         display.select(p ? p.display : "auto")
+        scope.select(p ? (p.gamescope || "") : "")
+        scopeArgs.text = p ? (p.gamescope_args || "") : ""
+        mangohud.select(p ? (p.mangohud || "") : "")
+        gamemode.select(p ? (p.gamemode || "") : "")
+        gpu.select(p ? (p.gpu || "") : "")
         env.text = p ? p.env : ""
         users.select(p ? p.users_mode : "default")
         shared.text = p ? p.users_shared : ""
@@ -40,7 +50,9 @@ Panel {
     function data() {
         return { id: prefix ? prefix.id : "", name: name.text, path: path.text, build: build.value(),
                  arch: arch.value(), display: display.value(), env: env.text, users_mode: users.value(),
-                 users_shared: shared.text, users_links: editor.links }
+                 users_shared: shared.text, users_links: editor.links, gamescope: scope.value(),
+                 gamescope_args: scopeArgs.text, mangohud: mangohud.value(), gamemode: gamemode.value(),
+                 gpu: gpu.value() }
     }
 
     FormRow {
@@ -69,6 +81,58 @@ Panel {
         label: qsTr("Display")
         hint: qsTr("For its applications whose own Display is auto. auto: Wine chooses (X11 when there is an X display).")
         FoxCombo { id: display; Layout.fillWidth: true; model: backend.choices.display }
+    }
+    FormRow {
+        label: qsTr("GPU")
+        hint: (backend.gpus.length > 1 ? "" : qsTr("One GPU in this computer.") + " ") +
+              qsTr("For its applications whose own GPU is \"as in the prefix\".")
+        FoxCombo {
+            id: gpu
+            Layout.fillWidth: true
+            textRole: "name"
+            valueRole: "id"
+            model: [{ id: "", name: qsTr("The system's default") }].concat(backend.gpus)
+        }
+    }
+    FormRow {
+        label: qsTr("Gamescope")
+        hint: (backend.hasGamescope ? "" : qsTr("Not installed: the programs run without it. ")) +
+              qsTr("For its applications whose own Gamescope is \"as in the prefix\". Options empty: as in Settings.")
+        FoxCombo {
+            id: scope
+            Layout.preferredWidth: 200
+            textRole: "name"
+            valueRole: "id"
+            model: editor.settingsChoices("gamescope")
+        }
+        FoxField { id: scopeArgs; Layout.fillWidth: true; monospace: true; placeholderText: qsTr("options") }
+    }
+    // as in an application's editor: each with its own label
+    GridLayout {
+        Layout.fillWidth: true
+        columns: 2
+        columnSpacing: 12
+        rowSpacing: 16
+        FormRow {
+            label: "MangoHud"
+            hint: backend.gameTools.mangohud ? qsTr("An overlay with FPS, frame times and load.")
+                                             : qsTr("Not installed: the programs run without it. ")
+            FoxCombo { id: mangohud; Layout.fillWidth: true; textRole: "name"; valueRole: "id"; model: editor.settingsChoices("mangohud") }
+        }
+        FormRow {
+            label: "GameMode"
+            hint: backend.gameTools.gamemode ? qsTr("Feral's GameMode: the CPU governor and priorities for games while it runs.")
+                                             : qsTr("Not installed: the programs run without it. ")
+            FoxCombo { id: gamemode; Layout.fillWidth: true; textRole: "name"; valueRole: "id"; model: editor.settingsChoices("gamemode") }
+        }
+        Text {
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+            text: qsTr("For its applications whose own choice is \"as in the prefix\".")
+            color: Theme.faint
+            font.pixelSize: Theme.smallFont
+            wrapMode: Text.WordWrap
+        }
     }
     FormRow {
         label: qsTr("Environment")

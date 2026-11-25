@@ -39,3 +39,5 @@ AutosdkPanel 1.0 AutosdkPanel.qml
 StatusDot 1.0 StatusDot.qml
 WindowFrame 1.0 WindowFrame.qml
 PatchPanel 1.0 PatchPanel.qml
+WindowButtons 1.0 WindowButtons.qml
+HealthPanel 1.0 HealthPanel.qml

@@ -9,11 +9,19 @@ Item {
     readonly property var buildChoices: [{ name: qsTr("First build found"), path: "" }].concat(
         backend.builds.map(b => ({ name: b.name + "  ·  " + b.version, path: b.path })))
 
+    // the whole width, above the settings' narrower column: the window's buttons at its right edge
+    PageHeader {
+        id: header
+        anchors { left: parent.left; right: parent.right; top: parent.top; margins: Theme.pad }
+        title: qsTr("Settings")
+        subtitle: qsTr("Saved as soon as you change them")
+    }
+
     ScrollView {
         FastScroll { flickable: scroll.contentItem }
         id: scroll
-        anchors.fill: parent
-        anchors.margins: Theme.pad
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: header.bottom
+                  margins: Theme.pad; topMargin: 22 }
         contentWidth: availableWidth
         clip: true
 
@@ -21,8 +29,6 @@ Item {
             Layout.fillWidth: true
             width: Math.min(scroll.availableWidth, 720)
             spacing: 22
-
-            PageHeader { title: qsTr("Settings"); subtitle: qsTr("Saved as soon as you change them") }
 
             FormRow {
                 label: qsTr("Language")
@@ -395,6 +401,46 @@ Item {
                     text: qsTr("In Wine Fox colours")
                     checked: page.s.wine_colors
                     onToggled: backend.saveSettings({ wine_colors: checked })
+                }
+            }
+
+            FormRow {
+                label: qsTr("Gamescope")
+                hint: (backend.hasGamescope ? "" : qsTr("Not installed: programs run without it. ")) +
+                      qsTr("Applications run in Valve's gamescope: its own resolution, scaling (FSR), frame limit, HDR. For prefixes and applications that follow Settings; each can turn it on or off. Options as for gamescope, e.g. -W 2560 -H 1440 -f.")
+                FoxSwitch {
+                    id: scopeOn
+                    Layout.fillWidth: false
+                    text: qsTr("On")
+                    checked: page.s.gamescope
+                    onToggled: backend.saveSettings({ gamescope: checked })
+                }
+                FoxField {
+                    Layout.fillWidth: true
+                    monospace: true
+                    placeholderText: qsTr("options")
+                    text: page.s.gamescope_args
+                    onEditingFinished: backend.saveSettings({ gamescope_args: text })
+                }
+            }
+
+            FormRow {
+                label: "MangoHud · GameMode"
+                hint: qsTr("MangoHud: an overlay with FPS, frame times and load. GameMode: Feral's CPU governor and priorities while a program runs. For prefixes and applications that follow Settings.")
+                      + (backend.gameTools.mangohud && backend.gameTools.gamemode ? "" : " " + qsTr("Not installed: %1.")
+                         .arg([backend.gameTools.mangohud ? "" : "MangoHud", backend.gameTools.gamemode ? "" : "GameMode"].filter(t => t).join(", ")))
+                ColumnLayout {
+                    spacing: 10
+                    FoxSwitch {
+                        text: qsTr("MangoHud in applications")
+                        checked: page.s.mangohud
+                        onToggled: backend.saveSettings({ mangohud: checked })
+                    }
+                    FoxSwitch {
+                        text: qsTr("GameMode while applications run")
+                        checked: page.s.gamemode
+                        onToggled: backend.saveSettings({ gamemode: checked })
+                    }
                 }
             }
 
