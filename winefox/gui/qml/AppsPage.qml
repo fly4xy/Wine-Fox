@@ -141,16 +141,19 @@ Item {
             spacing: 8
             FoxButton {
                 enabled: page.prefix !== null && page.prefix.exists
+                glyph: "list-plus"
                 text: qsTr("Add from prefix")
                 onClicked: page.addFromPrefix(page.prefix)
             }
             FoxButton {
-                text: "drive_c"; kind: "flat"
+                text: qsTr("Open prefix"); glyph: "folder-open"
                 enabled: page.prefix !== null && page.prefix.exists
+                ToolTip.visible: hovered; ToolTip.delay: 500
+                ToolTip.text: qsTr("Its drive_c in the file manager")
                 onClicked: backend.openPath(backend.driveC(page.prefixId))
             }
             FoxButton {
-                text: qsTr("Tools  ▾"); kind: "flat"
+                text: qsTr("Tools  ▾"); glyph: "wrench"
                 enabled: page.prefix !== null && page.prefix.exists
                 onClicked: tools.popup()
                 FoxMenu {
@@ -167,12 +170,12 @@ Item {
                 }
             }
             FoxButton {
-                text: qsTr("Install…"); kind: "flat"
+                text: qsTr("Install"); glyph: "package-plus"
                 enabled: page.prefix !== null && page.prefix.exists
                 onClicked: page.install(page.prefix)
             }
             FoxButton {
-                text: qsTr("Save…"); kind: "flat"
+                text: qsTr("Save"); glyph: "archive"
                 enabled: page.prefix !== null && page.prefix.exists
                 ToolTip.visible: hovered; ToolTip.delay: 500
                 ToolTip.text: qsTr("The prefix and its applications in one archive: a backup, or to move them to another computer")
@@ -186,13 +189,13 @@ Item {
                 }
             }
             FoxButton {
-                text: qsTr("Check"); kind: "flat"
+                text: qsTr("Check"); glyph: "stethoscope"
                 enabled: page.prefix !== null && page.prefix.exists
                 ToolTip.visible: hovered; ToolTip.delay: 500
                 ToolTip.text: qsTr("What keeps the prefix from working well, with the fixes")
                 onClicked: page.tool(page.prefix, "health")
             }
-            FoxButton { text: qsTr("Prefix settings"); kind: "flat"; onClicked: page.editPrefix(page.prefix) }
+            FoxButton { text: qsTr("Prefix settings"); glyph: "settings"; onClicked: page.editPrefix(page.prefix) }
             FoxButton {
                 text: qsTr("Stop"); kind: "danger"
                 visible: page.prefix !== null && page.prefix.running
@@ -331,7 +334,9 @@ Item {
                         visible: row.modelData.header !== true
                         anchors.fill: parent
                         radius: Theme.radius
-                        color: area.containsMouse ? Theme.raised : "transparent"
+                        color: rowHover.hovered ? Theme.raised : "transparent"
+                        // the row stays lit over its buttons (Run starts it as a click on the row does)
+                        HoverHandler { id: rowHover }
 
                         MouseArea {
                             id: area
@@ -382,7 +387,7 @@ Item {
                             PinIcon {
                                 pinned: row.modelData.pinned === true
                                 hovered: pinArea.containsMouse
-                                visible: pinned || area.containsMouse || pinArea.containsMouse
+                                visible: pinned || rowHover.hovered
                                 MouseArea {
                                     id: pinArea
                                     anchors.fill: parent
@@ -410,7 +415,7 @@ Item {
                                 readonly property bool running: row.modelData.running === true
                                 text: running ? qsTr("Stop") : qsTr("Run")
                                 implicitWidth: Math.max(implicitContentWidth + leftPadding + rightPadding, 64)
-                                kind: running ? "stop" : area.containsMouse || hovered ? "primary" : "normal"
+                                kind: running ? "stop" : rowHover.hovered ? "primary" : "normal"
                                 ToolTip.visible: running && hovered
                                 ToolTip.delay: 500
                                 ToolTip.text: qsTr("Close its windows, as their close button does (one without windows is ended)")

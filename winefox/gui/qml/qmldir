@@ -33,6 +33,7 @@ WineConfigPanel 1.0 WineConfigPanel.qml
 UninstallPanel 1.0 UninstallPanel.qml
 RegistryPanel 1.0 RegistryPanel.qml
 PinIcon 1.0 PinIcon.qml
+LineIcon 1.0 LineIcon.qml
 FastScroll 1.0 FastScroll.qml
 Graph 1.0 Graph.qml
 AutosdkPanel 1.0 AutosdkPanel.qml

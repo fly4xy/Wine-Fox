@@ -7,24 +7,29 @@ Item {
     id: page
     signal download(string kind)
     signal autosdk()
+    // opened: the builds again, and Wine-Fx's releases when an hour old (a new one is offered)
+    onVisibleChanged: if (visible) backend.refreshBuilds()
+
+    // stays at the top: the window's buttons do not scroll away
+    PageHeader {
+        id: header
+        anchors { left: parent.left; right: parent.right; top: parent.top; margins: Theme.pad }
+        title: qsTr("Wine & components")
+        subtitle: qsTr("Nothing is downloaded unless you ask. Builds are also found in the directories set in Settings.")
+        FoxButton { text: qsTr("Rescan"); onClicked: backend.refreshBuilds(true) }
+    }
 
     ScrollView {
         FastScroll { flickable: scroll.contentItem }
         id: scroll
-        anchors.fill: parent
-        anchors.margins: Theme.pad
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: header.bottom
+                  margins: Theme.pad; topMargin: 22 }
         contentWidth: availableWidth
         clip: true
 
         ColumnLayout {
             width: scroll.availableWidth
             spacing: 22
-
-            PageHeader {
-                title: qsTr("Wine & components")
-                subtitle: qsTr("Nothing is downloaded unless you ask. Builds are also found in the directories set in Settings.")
-                FoxButton { text: qsTr("Rescan"); onClicked: backend.refreshBuilds() }
-            }
 
             // ---------------------------------------------------- Wine builds
             Section {

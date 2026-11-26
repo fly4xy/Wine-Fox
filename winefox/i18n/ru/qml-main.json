@@ -336,5 +336,7 @@
  "The time at the start of each line.": "Время в начале каждой строки.",
  "The process id at the start of each line.": "Номер процесса в начале каждой строки.",
  "Everything else off: only the channels chosen here.": "Всё остальное выключено: только выбранные здесь каналы.",
- "No fixme lines (what Wine does not do yet).": "Без строк fixme (о том, чего Wine пока не умеет)."
+ "No fixme lines (what Wine does not do yet).": "Без строк fixme (о том, чего Wine пока не умеет).",
+ "Open prefix": "Открыть префикс",
+ "Its drive_c in the file manager": "Его drive_c в файловом менеджере"
 }

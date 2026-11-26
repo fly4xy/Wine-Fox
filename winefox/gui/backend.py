@@ -224,7 +224,8 @@ class Backend(QObject):
         self.store = store
         self._builds: list[wine.WineBuild] = []
         self._fx: dict[str, dict] = {}            # build path -> its Wine-Fx release ({} if not Wine-Fx)
-        self._fx_releases: list[dict] | None = None   # Wine-Fx's releases, read once when there is one
+        self._fx_releases: list[dict] | None = None   # Wine-Fx's releases, when there is a Wine-Fx build
+        self._fx_checked = 0.0                         # when they were read (time.monotonic)
         self._groups: list[servers.PrefixGroup] = []
         self._busy: list[str] = []
         self._downloads: dict[str, int] = {}
@@ -1704,11 +1705,16 @@ class Backend(QObject):
             return False
 
     @Slot()
-    def refreshBuilds(self):
+    @Slot(bool)
+    def refreshBuilds(self, fetch=False):
+        """Scan the builds; Wine-Fx's releases are read again when asked (Rescan) or an hour old:
+        read once per run, a release out meanwhile was not offered until Wine Fox restarted."""
         def scan():
             builds = wine.scan(self.store.settings.wine_dirs)
             self._fx = {str(b.path): winefx.installed(b.path) for b in builds}
-            if self._fx_releases is None and any(self._fx.values()) and self.store.settings.check_updates:
+            stale = fetch or self._fx_releases is None or time.monotonic() - self._fx_checked > 3600
+            if stale and any(self._fx.values()) and self.store.settings.check_updates:
+                self._fx_checked = time.monotonic()
                 try:
                     self._fx_releases = components.releases("wine-fx")
                 except components.DownloadError as e:

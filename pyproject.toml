@@ -18,5 +18,5 @@ build-backend = "setuptools.build_meta"
 include = ["winefox*"]
 
 [tool.setuptools.package-data]
-"winefox.gui" = ["qml/*.qml", "qml/qmldir", "qml/*.png"]
+"winefox.gui" = ["qml/*.qml", "qml/qmldir", "qml/*.png", "qml/LICENSE-lucide"]
 "winefox" = ["recipes/*.toml", "recipes/files/*/*", "i18n/*/*.json"]

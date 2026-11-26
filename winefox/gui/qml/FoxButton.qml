@@ -5,6 +5,7 @@ import QtQuick.Controls.Basic
 Button {
     id: control
     property string kind: "normal"
+    property string glyph: ""        // a LineIcon before the text
     implicitHeight: Theme.controlHeight
     leftPadding: text ? 14 : 8
     rightPadding: text ? 14 : 8
@@ -12,7 +13,15 @@ Button {
     hoverEnabled: true
 
     contentItem: Text {
+        id: label
         text: control.text
+        leftPadding: control.glyph ? 16 + 7 : 0
+        LineIcon {
+            visible: control.glyph !== ""
+            name: control.glyph
+            color: label.color
+            anchors.verticalCenter: parent.verticalCenter
+        }
         font: control.font
         color: control.kind === "primary" ? Theme.accentText
              : control.kind === "stop" ? (control.hovered ? Theme.accentText : Theme.danger)
